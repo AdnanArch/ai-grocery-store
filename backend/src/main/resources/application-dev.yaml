@@ -1,0 +1,26 @@
+# Development Email Configuration
+# Uses Gmail SMTP for testing (same as production)
+# For local testing without Gmail, use environment variables to override
+
+spring:
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          quitwait: false
+
+# Logging for email debugging
+logging:
+  level:
+    org.springframework.mail: DEBUG
+    com.groceryapp.backend.service.EmailService: DEBUG

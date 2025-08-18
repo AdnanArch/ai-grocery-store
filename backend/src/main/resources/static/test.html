@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Static Resource Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        line-height: 1.6;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+      h1 {
+        color: #2c3e50;
+      }
+      .success {
+        color: green;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Static Resource Test Page</h1>
+      <p class="success">
+        If you can see this page, static resources are being served correctly!
+      </p>
+
+      <h2>Troubleshooting Information</h2>
+      <p>
+        This is a simple test page to verify that Spring Boot is correctly
+        serving static resources.
+      </p>
+
+      <h2>Next Steps</h2>
+      <p>
+        If you can see this page but not your React app, the issue might be:
+      </p>
+      <ul>
+        <li>JavaScript errors in your React application</li>
+        <li>Issues with the React build process</li>
+        <li>Problems with client-side routing</li>
+      </ul>
+
+      <p>Current URL: <span id="currentUrl"></span></p>
+      <p>Current Time: <span id="currentTime"></span></p>
+    </div>
+
+    <script>
+      // Simple JavaScript to verify JS execution
+      document.getElementById("currentUrl").textContent = window.location.href;
+      document.getElementById("currentTime").textContent =
+        new Date().toLocaleString();
+    </script>
+  </body>
+</html>

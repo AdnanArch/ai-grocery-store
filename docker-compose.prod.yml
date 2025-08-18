@@ -1,0 +1,161 @@
+version: "3.8"
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: grocery-mysql-prod
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data_prod:/var/lib/mysql
+    networks:
+      - grocery-network-prod
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=512M
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: grocery-backend-prod
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC&autoReconnect=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_KEY: ${JWT_KEY}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+      JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_AUTH: ${MAIL_AUTH}
+      MAIL_STARTTLS: ${MAIL_STARTTLS}
+      JAZZCASH_MERCHANT_ID: ${JAZZCASH_MERCHANT_ID}
+      JAZZCASH_PASSWORD: ${JAZZCASH_PASSWORD}
+      JAZZCASH_RETURN_URL: ${JAZZCASH_RETURN_URL}
+      JAZZCASH_API_URL: ${JAZZCASH_API_URL}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      FRONTEND_URL: ${FRONTEND_URL}
+      AI_SERVICE_URL: ${AI_SERVICE_URL}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      - mysql
+      - ai-service
+    networks:
+      - grocery-network-prod
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Python AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: grocery-ai-service-prod
+    environment:
+      FLASK_ENV: production
+      FLASK_APP: app.py
+    ports:
+      - "${AI_SERVICE_PORT:-5000}:5000"
+    networks:
+      - grocery-network-prod
+    restart: unless-stopped
+    volumes:
+      - ai_model_data_prod:/app/models
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: grocery-frontend-prod
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
+      REACT_APP_AI_SERVICE_URL: ${REACT_APP_AI_SERVICE_URL}
+      REACT_APP_STRIPE_PUBLISHABLE_KEY: ${REACT_APP_STRIPE_PUBLISHABLE_KEY}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+      - ai-service
+    networks:
+      - grocery-network-prod
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy (Optional for production)
+  nginx:
+    image: nginx:alpine
+    container_name: grocery-nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+      - ai-service
+    networks:
+      - grocery-network-prod
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
+volumes:
+  mysql_data_prod:
+    driver: local
+  ai_model_data_prod:
+    driver: local
+
+networks:
+  grocery-network-prod:
+    driver: bridge

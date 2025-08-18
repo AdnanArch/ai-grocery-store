@@ -1,0 +1,133 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: grocery-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT:-3307}:3306" # Changed from 3306 to 3307 to avoid conflicts
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - grocery-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=256M
+
+  # phpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: grocery-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - grocery-network
+    restart: unless-stopped
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: grocery-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&autoReconnect=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JWT_KEY: ${JWT_KEY}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+      JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_AUTH: ${MAIL_AUTH}
+      MAIL_STARTTLS: ${MAIL_STARTTLS}
+      JAZZCASH_MERCHANT_ID: ${JAZZCASH_MERCHANT_ID}
+      JAZZCASH_PASSWORD: ${JAZZCASH_PASSWORD}
+      JAZZCASH_RETURN_URL: ${JAZZCASH_RETURN_URL}
+      JAZZCASH_API_URL: ${JAZZCASH_API_URL}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      FRONTEND_URL: ${FRONTEND_URL}
+      AI_SERVICE_URL: ${AI_SERVICE_URL}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      - mysql
+      - ai-service
+    networks:
+      - grocery-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # Python AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: grocery-ai-service
+    environment:
+      FLASK_ENV: production
+      FLASK_APP: app.py
+    ports:
+      - "${AI_SERVICE_PORT:-5000}:5000"
+    networks:
+      - grocery-network
+    restart: unless-stopped
+    volumes:
+      - ai_model_data:/app/models
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: grocery-frontend
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
+      REACT_APP_AI_SERVICE_URL: ${REACT_APP_AI_SERVICE_URL}
+      REACT_APP_STRIPE_PUBLISHABLE_KEY: ${REACT_APP_STRIPE_PUBLISHABLE_KEY}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+      - ai-service
+    networks:
+      - grocery-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
+volumes:
+  mysql_data:
+    driver: local
+  ai_model_data:
+    driver: local
+
+networks:
+  grocery-network:
+    driver: bridge

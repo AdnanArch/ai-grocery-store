@@ -1,0 +1,72 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:grocerystore}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&autoReconnect=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:admin}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+        connection:
+          characterEncoding: utf8
+          useUnicode: true
+
+  # Email Configuration - Gmail SMTP
+  # Production: Uses Gmail SMTP with App Password
+  # Development: Can be overridden with environment variables
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          quitwait: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+jwt:
+  key: ${JWT_KEY:}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000} # 1 hour
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:86400000} # 24 hours
+  header: Authorization
+  prefix: Bearer
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG # TRACE is too verbose for normal use
+
+# JazzCash Configuration
+jazzcash:
+  merchant-id: ${JAZZCASH_MERCHANT_ID:}
+  password: ${JAZZCASH_PASSWORD:}
+  return-url: ${JAZZCASH_RETURN_URL:http://localhost:3000/payment-success}
+  currency: PKR
+  language: EN
+  api-url: ${JAZZCASH_API_URL:https://sandbox.jazzcash.com.pk/ApplicationAPI/API/2.0/Purchase/DoMWalletTransaction}
+
+# Application Configuration
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  ai-service-url: ${AI_SERVICE_URL:http://localhost:5000}
