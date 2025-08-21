@@ -29,7 +29,7 @@ import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 
 const Cart = () => {
-  const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } =
+  const { cartItems, updateQuantity, removeFromCart, clearCart } =
     useContext(CartContext);
   const { isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -180,10 +180,13 @@ const Cart = () => {
                                 width: "100px",
                                 height: "100px",
                                 objectFit: "cover",
+                                background: "#f8f9fa",
+                                minHeight: "100px",
                               }}
                               onError={(e) => {
                                 e.target.src = "/placeholder-product.jpg";
                               }}
+                              loading="lazy"
                             />
                           </Col>
                           <Col md={4}>
@@ -304,66 +307,53 @@ const Cart = () => {
                   </div>
 
                   <div className="order-summary">
-                    <div className="summary-item mb-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label flex-grow-0">
-                          <FontAwesomeIcon
-                            icon={faCalculator}
-                            className="me-2"
-                          />
-                          Subtotal
-                        </span>
-                        <span className="summary-value flex-grow-0 ms-auto">
-                          ₨{subtotal.toLocaleString()}
-                        </span>
+                    <div className="summary-item">
+                      <div className="d-flex align-items-center">
+                        <FontAwesomeIcon icon={faCalculator} className="me-2" />
+                        <span className="summary-label">Subtotal</span>
                       </div>
+                      <span className="summary-value">
+                        ₨{subtotal.toLocaleString()}
+                      </span>
                     </div>
 
-                    <div className="summary-item mb-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label flex-grow-0">
-                          <FontAwesomeIcon
-                            icon={faShippingFast}
-                            className="me-2"
-                          />
-                          Shipping
-                        </span>
-                        <span className="summary-value flex-grow-0 ms-auto">
-                          {shipping === 0 ? (
-                            <span className="text-success">Free</span>
-                          ) : (
-                            `₨${shipping.toLocaleString()}`
-                          )}
-                        </span>
+                    <div className="summary-item">
+                      <div className="d-flex align-items-center">
+                        <FontAwesomeIcon
+                          icon={faShippingFast}
+                          className="me-2"
+                        />
+                        <span className="summary-label">Shipping</span>
                       </div>
+                      <span className="summary-value">
+                        {shipping === 0 ? (
+                          <span className="text-success">Free</span>
+                        ) : (
+                          `₨${shipping.toLocaleString()}`
+                        )}
+                      </span>
                     </div>
 
-                    <div className="summary-item mb-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label flex-grow-0">
-                          <FontAwesomeIcon icon={faPercent} className="me-2" />
-                          Tax (4%)
-                        </span>
-                        <span className="summary-value flex-grow-0 ms-auto">
-                          ₨{tax.toLocaleString()}
-                        </span>
+                    <div className="summary-item">
+                      <div className="d-flex align-items-center">
+                        <FontAwesomeIcon icon={faPercent} className="me-2" />
+                        <span className="summary-label">Tax (4%)</span>
                       </div>
+                      <span className="summary-value">
+                        ₨{tax.toLocaleString()}
+                      </span>
                     </div>
 
                     <hr />
 
-                    <div className="summary-item mb-4">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label fw-bold flex-grow-0">
-                          Total
-                        </span>
-                        <span
-                          className="summary-value fw-bold flex-grow-0 ms-auto"
-                          style={{ color: "#38e07b", fontSize: "1.2rem" }}
-                        >
-                          ₨{total.toLocaleString()}
-                        </span>
-                      </div>
+                    <div className="summary-item">
+                      <span className="summary-label fw-bold">Total</span>
+                      <span
+                        className="summary-value fw-bold"
+                        style={{ color: "#38e07b", fontSize: "1.2rem" }}
+                      >
+                        ₨{total.toLocaleString()}
+                      </span>
                     </div>
 
                     <Button

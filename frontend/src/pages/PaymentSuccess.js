@@ -1,177 +1,254 @@
-import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
 import {
   Container,
   Row,
   Col,
   Card,
-  Alert,
-  Spinner,
   Button,
+  Spinner,
+  Alert,
 } from "react-bootstrap";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheckCircle,
-  faTimesCircle,
   faHome,
-  faReceipt,
+  faShoppingBag,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
+import { CartContext } from "../context/CartContext";
+import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
+import api from "../utils/axios";
 
 const PaymentSuccess = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { clearCart } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
+
+  const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [paymentStatus, setPaymentStatus] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+
+  const orderId = searchParams.get("orderId");
+  const sessionId = searchParams.get("session_id");
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    const handlePaymentSuccess = async () => {
       try {
-        const txnRefNumber = searchParams.get("pp_TxnRefNo");
-        const responseCode = searchParams.get("pp_ResponseCode");
-        const orderId = searchParams.get("pp_BillReference");
-
-        if (!txnRefNumber || !responseCode) {
-          setError("Invalid payment response");
+        if (!orderId) {
+          setError("No order ID found");
           setLoading(false);
           return;
         }
 
-        // Verify payment with backend
-        const response = await axios.put(`/api/payments/orders/${orderId}/payment-status`, {
-          txnRefNumber,
-          responseCode,
-          status: responseCode === "000" ? "PAID" : "FAILED"
+        // Clear the cart since payment was successful
+        clearCart();
+
+        // Update order status to PAID
+        await api.put(`/api/orders/${orderId}/status`, {
+          status: "PAID",
         });
 
-        if (response.status === 200) {
-          setPaymentStatus("success");
-        } else {
-          setPaymentStatus("failed");
-        }
+        // Fetch order details
+        const response = await api.get(`/api/orders/${orderId}`);
+        setOrder(response.data);
+
+        toast.success("Payment successful! Your order has been confirmed.");
       } catch (error) {
-        console.error("Payment verification error:", error);
-        setError("Failed to verify payment status");
-        setPaymentStatus("failed");
+        console.error("Error processing payment success:", error);
+        setError(
+          "There was an issue processing your payment. Please contact support."
+        );
+        toast.error("Error processing payment success");
       } finally {
         setLoading(false);
       }
     };
 
-    verifyPayment();
-  }, [searchParams]);
+    handlePaymentSuccess();
+  }, [orderId, sessionId, clearCart]);
+
+  const handleContinueShopping = () => {
+    navigate("/shop");
+  };
+
+  const handleViewOrders = () => {
+    navigate("/orders");
+  };
+
+  const handleGoHome = () => {
+    navigate("/");
+  };
 
   if (loading) {
     return (
-      <Container className="py-5 text-center">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3">Verifying your payment...</p>
-      </Container>
+      <div
+        className="payment-success-page d-flex flex-column min-vh-100"
+        style={{
+          background: "#f8fbfa",
+          fontFamily: "'Plus Jakarta Sans', 'Noto Sans', sans-serif",
+        }}
+      >
+        <Container className="flex-grow-1 d-flex justify-content-center align-items-center">
+          <div className="text-center">
+            <Spinner animation="border" role="status" className="mb-3">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+            <h4>Processing your payment...</h4>
+          </div>
+        </Container>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container className="py-5">
-        <Row className="justify-content-center">
-          <Col md={6}>
-            <Card className="border-0 shadow-sm">
-              <Card.Body className="text-center p-5">
-                <FontAwesomeIcon
-                  icon={faTimesCircle}
-                  size="4x"
-                  className="text-danger mb-4"
-                />
-                <h3 className="mb-3">Payment Verification Failed</h3>
-                <p className="text-muted mb-4">{error}</p>
-                <Button
-                  variant="primary"
-                  onClick={() => navigate("/")}
-                  className="me-2"
-                >
-                  <FontAwesomeIcon icon={faHome} className="me-2" />
+      <div
+        className="payment-success-page d-flex flex-column min-vh-100"
+        style={{
+          background: "#f8fbfa",
+          fontFamily: "'Plus Jakarta Sans', 'Noto Sans', sans-serif",
+        }}
+      >
+        <Container className="flex-grow-1 py-5">
+          <Row className="justify-content-center">
+            <Col lg={6}>
+              <Alert variant="danger" className="text-center">
+                <h4>Payment Error</h4>
+                <p>{error}</p>
+                <Button variant="outline-danger" onClick={handleGoHome}>
                   Go Home
                 </Button>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+              </Alert>
+            </Col>
+          </Row>
+        </Container>
+      </div>
     );
   }
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={6}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="text-center p-5">
-              {paymentStatus === "success" ? (
-                <>
-                  <FontAwesomeIcon
-                    icon={faCheckCircle}
-                    size="4x"
-                    className="text-success mb-4"
-                  />
-                  <h3 className="mb-3">Payment Successful!</h3>
-                  <p className="text-muted mb-4">
-                    Your payment has been processed successfully. You will receive
-                    an email confirmation shortly.
-                  </p>
-                  <div className="d-grid gap-2">
-                    <Button
-                      variant="primary"
-                      onClick={() => navigate("/orders")}
-                      className="mb-2"
+    <div
+      className="payment-success-page d-flex flex-column min-vh-100"
+      style={{
+        background: "#f8fbfa",
+        fontFamily: "'Plus Jakarta Sans', 'Noto Sans', sans-serif",
+      }}
+    >
+      <Container className="flex-grow-1 py-5">
+        <Row className="justify-content-center">
+          <Col lg={8}>
+            <div className="text-center mb-5">
+              <FontAwesomeIcon
+                icon={faCheckCircle}
+                className="text-success"
+                style={{ fontSize: "4rem" }}
+              />
+              <h1
+                className="mt-3 mb-3 fw-bold"
+                style={{ color: "#0e1a13", fontSize: "2.5rem" }}
+              >
+                Payment Successful!
+              </h1>
+              <p className="text-muted fs-5">
+                Thank you for your order. We've received your payment and your
+                order has been confirmed.
+              </p>
+            </div>
+
+            {order && (
+              <Row>
+                <Col lg={6}>
+                  <Card className="border-0 shadow-sm mb-4">
+                    <Card.Header
+                      style={{
+                        background: "#f8fbfa",
+                        borderBottom: "1px solid #e5e7eb",
+                      }}
                     >
-                      <FontAwesomeIcon icon={faReceipt} className="me-2" />
-                      View Orders
-                    </Button>
-                    <Button
-                      variant="outline-primary"
-                      onClick={() => navigate("/")}
+                      <h5 className="mb-0">Order Details</h5>
+                    </Card.Header>
+                    <Card.Body>
+                      <div className="mb-3">
+                        <strong>Order ID:</strong> #{order.id}
+                      </div>
+                      <div className="mb-3">
+                        <strong>Order Date:</strong>{" "}
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="mb-3">
+                        <strong>Total Amount:</strong>{" "}
+                        <span className="text-success fw-bold">
+                          ${order.totalAmount}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <strong>Status:</strong>{" "}
+                        <span className="badge bg-success">Paid</span>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                <Col lg={6}>
+                  <Card className="border-0 shadow-sm mb-4">
+                    <Card.Header
+                      style={{
+                        background: "#f8fbfa",
+                        borderBottom: "1px solid #e5e7eb",
+                      }}
                     >
-                      <FontAwesomeIcon icon={faHome} className="me-2" />
-                      Continue Shopping
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <FontAwesomeIcon
-                    icon={faTimesCircle}
-                    size="4x"
-                    className="text-danger mb-4"
-                  />
-                  <h3 className="mb-3">Payment Failed</h3>
-                  <p className="text-muted mb-4">
-                    Unfortunately, your payment could not be processed. Please try
-                    again or contact support if the problem persists.
-                  </p>
-                  <div className="d-grid gap-2">
-                    <Button
-                      variant="primary"
-                      onClick={() => navigate("/cart")}
-                      className="mb-2"
-                    >
-                      Return to Cart
-                    </Button>
-                    <Button
-                      variant="outline-primary"
-                      onClick={() => navigate("/")}
-                    >
-                      <FontAwesomeIcon icon={faHome} className="me-2" />
-                      Go Home
-                    </Button>
-                  </div>
-                </>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                      <h5 className="mb-0">What's Next?</h5>
+                    </Card.Header>
+                    <Card.Body>
+                      <ul className="list-unstyled">
+                        <li className="mb-2">
+                          <i className="fas fa-envelope text-primary me-2"></i>
+                          You'll receive an email confirmation shortly
+                        </li>
+                        <li className="mb-2">
+                          <i className="fas fa-truck text-primary me-2"></i>
+                          We'll notify you when your order ships
+                        </li>
+                        <li className="mb-2">
+                          <i className="fas fa-clock text-primary me-2"></i>
+                          Estimated delivery: 3-5 business days
+                        </li>
+                      </ul>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            )}
+
+            <div className="text-center">
+              <div className="d-grid gap-3 d-md-block">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleViewOrders}
+                  className="me-md-2"
+                  style={{ background: "#6366f1", border: "none" }}
+                >
+                  <FontAwesomeIcon icon={faShoppingBag} className="me-2" />
+                  View My Orders
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  size="lg"
+                  onClick={handleContinueShopping}
+                  className="me-md-2"
+                >
+                  <FontAwesomeIcon icon={faHome} className="me-2" />
+                  Continue Shopping
+                </Button>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 };
 

@@ -29,7 +29,7 @@ import {
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../utils/axios";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -135,23 +135,36 @@ const Checkout = () => {
       };
 
       // Send order to API
-      const response = await axios.post("/api/orders", orderData);
+      const response = await api.post("/api/orders", orderData);
 
-      // Navigate to payment page with order data
-      navigate("/payment", {
-        state: {
-          order: {
-            ...response.data,
-            totalAmount: total,
-            user: {
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              email: formData.email,
-            },
-            shippingAddress: orderData.shippingAddress,
-          },
-        },
-      });
+      // Create Stripe checkout session
+      const checkoutResponse = await api.post(
+        "/api/payments/create-checkout-session",
+        {
+          orderId: response.data.id,
+          amount: total,
+          currency: "pkr",
+          customerEmail: formData.email,
+          successUrl: `${window.location.origin}/payment-success?orderId=${response.data.id}`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        }
+      );
+
+      // Redirect to Stripe checkout
+      if (checkoutResponse.data.success && checkoutResponse.data.url) {
+        // Check if currency was converted
+        if (
+          checkoutResponse.data.originalCurrency === "pkr" &&
+          checkoutResponse.data.currency === "usd"
+        ) {
+          toast.info(
+            `Payment will be processed in USD (${checkoutResponse.data.convertedAmount}) instead of PKR (${checkoutResponse.data.originalAmount}) due to currency restrictions.`
+          );
+        }
+        window.location.href = checkoutResponse.data.url;
+      } else {
+        throw new Error("Failed to create checkout session");
+      }
     } catch (error) {
       console.error("Error creating order:", error);
 
@@ -519,11 +532,13 @@ const Checkout = () => {
 
             {/* Order Summary */}
             <Col lg={4}>
-              <Card className="login-card shadow-lg border-0">
+              <Card className="login-card shadow-lg border-0 mb-4">
                 <Card.Body className="p-4 p-md-5">
                   <div className="text-center mb-4">
                     <h2 className="login-title mb-2">Order Summary</h2>
-                    <p className="login-subtitle">Review your order details</p>
+                    <p className="login-subtitle">
+                      Complete breakdown of your order
+                    </p>
                   </div>
 
                   <div className="order-items mb-4">
@@ -546,78 +561,65 @@ const Checkout = () => {
                   <hr />
 
                   <div className="order-summary">
-                    <div className="summary-item mb-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label">
-                          <FontAwesomeIcon
-                            icon={faCalculator}
-                            className="me-2"
-                          />
-                          Subtotal
-                        </span>
-                        <span className="summary-value">
-                          ₨{subtotal.toLocaleString()}
-                        </span>
+                    <div className="summary-item">
+                      <div className="d-flex align-items-center">
+                        <FontAwesomeIcon icon={faCalculator} className="me-2" />
+                        <span className="summary-label">Subtotal</span>
                       </div>
+                      <span className="summary-value">
+                        ₨{subtotal.toLocaleString()}
+                      </span>
                     </div>
 
-                    <div className="summary-item mb-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label">
-                          <FontAwesomeIcon
-                            icon={faShippingFast}
-                            className="me-2"
-                          />
-                          Shipping
-                        </span>
-                        <span className="summary-value">
-                          {shipping === 0 ? (
-                            <span className="text-success">Free</span>
-                          ) : (
-                            `₨${shipping.toLocaleString()}`
-                          )}
-                        </span>
+                    <div className="summary-item">
+                      <div className="d-flex align-items-center">
+                        <FontAwesomeIcon
+                          icon={faShippingFast}
+                          className="me-2"
+                        />
+                        <span className="summary-label">Shipping</span>
                       </div>
+                      <span className="summary-value">
+                        {shipping === 0 ? (
+                          <span className="text-success">Free</span>
+                        ) : (
+                          `₨${shipping.toLocaleString()}`
+                        )}
+                      </span>
                     </div>
 
-                    <div className="summary-item mb-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label">
-                          <FontAwesomeIcon icon={faPercent} className="me-2" />
-                          Tax (15%)
-                        </span>
-                        <span className="summary-value">
-                          ₨{tax.toLocaleString()}
-                        </span>
+                    <div className="summary-item">
+                      <div className="d-flex align-items-center">
+                        <FontAwesomeIcon icon={faPercent} className="me-2" />
+                        <span className="summary-label">Tax (15%)</span>
                       </div>
+                      <span className="summary-value">
+                        ₨{tax.toLocaleString()}
+                      </span>
                     </div>
 
                     {discount > 0 && (
-                      <div className="summary-item mb-3">
-                        <div className="d-flex justify-content-between align-items-center text-success">
-                          <span className="summary-label">
-                            <FontAwesomeIcon icon={faCheck} className="me-2" />
-                            Discount
-                          </span>
-                          <span className="summary-value">
-                            -₨{discount.toLocaleString()}
-                          </span>
+                      <div className="summary-item">
+                        <div className="d-flex align-items-center">
+                          <FontAwesomeIcon icon={faCheck} className="me-2" />
+                          <span className="summary-label">Discount</span>
                         </div>
+                        <span className="summary-value text-success">
+                          -₨{discount.toLocaleString()}
+                        </span>
                       </div>
                     )}
 
                     <hr />
 
-                    <div className="summary-item mb-4">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="summary-label fw-bold">Total</span>
-                        <span
-                          className="summary-value fw-bold"
-                          style={{ color: "#38e07b", fontSize: "1.2rem" }}
-                        >
-                          ₨{total.toLocaleString()}
-                        </span>
-                      </div>
+                    <div className="summary-item">
+                      <span className="summary-label fw-bold">Total</span>
+                      <span
+                        className="summary-value fw-bold"
+                        style={{ color: "#38e07b", fontSize: "1.2rem" }}
+                      >
+                        ₨{total.toLocaleString()}
+                      </span>
                     </div>
 
                     <Button
@@ -652,6 +654,14 @@ const Checkout = () => {
                       <small className="text-muted d-block">
                         <FontAwesomeIcon icon={faShieldAlt} className="me-1" />
                         Secure Checkout
+                      </small>
+                      <small className="text-muted d-block mt-2">
+                        {shipping === 0
+                          ? "Free shipping applied!"
+                          : `Free shipping on orders over ₨5,000. You're ₨${Math.max(
+                              0,
+                              5000 - subtotal
+                            ).toLocaleString()} away.`}
                       </small>
                     </div>
                   </div>

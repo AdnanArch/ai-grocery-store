@@ -1,211 +1,236 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Container, Row, Col, Card, Button, Badge } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faArrowRight,
+  faStar,
+  faShoppingCart,
+  faHeart,
+  faEye,
+  faLeaf,
+  faTruck,
+  faShieldAlt,
+  faClock,
+  faUsers,
+  faAward,
+  faCheckCircle,
+  faPlay,
+  faQuoteLeft,
+} from "@fortawesome/free-solid-svg-icons";
+import { faHeart as farHeart } from "@fortawesome/free-regular-svg-icons";
 
 const Home = () => {
   const [featuredProducts] = useState([
     {
       id: 1,
-      name: "Organic Fresh Vegetables",
-      price: 12.99,
-      originalPrice: 15.99,
+      name: "Organic Fresh Vegetables Bundle",
+      price: 1299,
+      originalPrice: 1599,
       image:
         "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop",
       category: "Vegetables",
       rating: 4.8,
       discount: 20,
+      stock: 45,
     },
     {
       id: 2,
-      name: "Premium Dairy Products",
-      price: 8.5,
-      originalPrice: 10.0,
+      name: "Premium Dairy Products Pack",
+      price: 850,
+      originalPrice: 1000,
       image:
         "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=300&fit=crop",
       category: "Dairy",
       rating: 4.9,
       discount: 15,
+      stock: 32,
     },
     {
       id: 3,
-      name: "Fresh Bakery Items",
-      price: 6.99,
-      originalPrice: 8.99,
+      name: "Fresh Artisan Bakery Collection",
+      price: 699,
+      originalPrice: 899,
       image:
         "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop",
       category: "Bakery",
       rating: 4.7,
       discount: 25,
+      stock: 28,
     },
     {
       id: 4,
-      name: "Organic Fruits Bundle",
-      price: 18.99,
-      originalPrice: 24.99,
+      name: "Organic Fruits Premium Bundle",
+      price: 1899,
+      originalPrice: 2499,
       image:
         "https://images.unsplash.com/photo-1619566636858-adf3f41a0c0a?w=400&h=300&fit=crop",
       category: "Fruits",
       rating: 4.6,
       discount: 24,
+      stock: 15,
     },
   ]);
 
   const [categories] = useState([
-    { name: "Fresh Produce", icon: "🥬", count: 150, color: "#4ade80" },
-    { name: "Dairy & Eggs", icon: "🥛", count: 89, color: "#fbbf24" },
-    { name: "Meat & Seafood", icon: "🥩", count: 67, color: "#f87171" },
-    { name: "Pantry Essentials", icon: "🍯", count: 234, color: "#a78bfa" },
-    { name: "Beverages", icon: "🥤", count: 112, color: "#60a5fa" },
-    { name: "Frozen Foods", icon: "🧊", count: 78, color: "#34d399" },
+    {
+      name: "Fresh Produce",
+      icon: "🥬",
+      count: 150,
+      color: "#4ade80",
+      image:
+        "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300&h=200&fit=crop",
+    },
+    {
+      name: "Dairy & Eggs",
+      icon: "🥛",
+      count: 89,
+      color: "#fbbf24",
+      image:
+        "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300&h=200&fit=crop",
+    },
+    {
+      name: "Meat & Seafood",
+      icon: "🥩",
+      count: 67,
+      color: "#f87171",
+      image:
+        "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=300&h=200&fit=crop",
+    },
+    {
+      name: "Pantry Essentials",
+      icon: "🍯",
+      count: 234,
+      color: "#a78bfa",
+      image:
+        "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&h=200&fit=crop",
+    },
+    {
+      name: "Beverages",
+      icon: "🥤",
+      count: 112,
+      color: "#60a5fa",
+      image:
+        "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&h=200&fit=crop",
+    },
+    {
+      name: "Frozen Foods",
+      icon: "🧊",
+      count: 78,
+      color: "#34d399",
+      image:
+        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop",
+    },
+  ]);
+
+  const [testimonials] = useState([
+    {
+      id: 1,
+      name: "Sarah Ahmed",
+      role: "Home Chef",
+      content:
+        "The quality of fresh produce is outstanding! I love how everything is delivered right to my doorstep.",
+      rating: 5,
+      avatar:
+        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+    },
+    {
+      id: 2,
+      name: "Ahmed Hassan",
+      role: "Restaurant Owner",
+      content:
+        "Best grocery delivery service I've used. Fast, reliable, and the products are always fresh.",
+      rating: 5,
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+    },
+    {
+      id: 3,
+      name: "Fatima Khan",
+      role: "Health Enthusiast",
+      content:
+        "Perfect for my healthy lifestyle. The organic selection is amazing and prices are reasonable.",
+      rating: 5,
+      avatar:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+    },
   ]);
 
   return (
-    <div
-      className="home-page"
-      style={{
-        background: "#f8fbfa",
-        fontFamily: "'Plus Jakarta Sans', 'Noto Sans', sans-serif",
-        minHeight: "100vh",
-      }}
-    >
+    <div className="home-page">
       {/* Hero Section */}
-      <section
-        className="hero-section d-flex align-items-center"
-        style={{
-          background: "linear-gradient(135deg, #f8fbfa 0%, #e0f7fa 100%)",
-          color: "#0e1a13",
-          minHeight: "100vh",
-          padding: 0,
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "0 8px 32px 0 rgba(16, 185, 129, 0.1)",
-        }}
-      >
-        <div
-          className="hero-pattern"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background:
-              'url(\'data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%2310b981" fill-opacity="0.08"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\')',
-            opacity: 0.25,
-            zIndex: 0,
-          }}
-        ></div>
-        <Container style={{ position: "relative", zIndex: 1 }}>
-          <Row
-            className="align-items-center justify-content-center"
-            style={{ minHeight: "100vh" }}
-          >
-            <Col
-              lg={6}
-              className="mb-5 mb-lg-0 d-flex flex-column justify-content-center"
-              style={{ minHeight: "60vh" }}
-            >
-              <div className="hero-content px-2 px-md-4">
-                <Badge
-                  bg="warning"
-                  className="mb-3 px-3 py-2"
-                  style={{
-                    fontSize: "1rem",
-                    fontWeight: "600",
-                    color: "#b45309",
-                    background: "#fef3c7",
-                  }}
+      <section className="hero-section">
+        <div className="hero-background">
+          <div className="hero-pattern"></div>
+        </div>
+        <Container>
+          <Row className="align-items-center min-vh-100">
+            <Col lg={6} className="hero-content">
+              <Badge bg="success" className="hero-badge mb-3">
+                <FontAwesomeIcon icon={faLeaf} className="me-2" />
+                Fresh & Organic
+              </Badge>
+              <h1 className="hero-title">
+                Fresh Groceries Delivered to Your
+                <span className="text-primary"> Doorstep</span>
+              </h1>
+              <p className="hero-subtitle">
+                Discover the finest selection of fresh, organic groceries. Fast
+                delivery, competitive prices, and exceptional quality
+                guaranteed.
+              </p>
+              <div className="hero-actions">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="me-3"
+                  as={Link}
+                  to="/shop"
                 >
-                  🥦 Fresh, Fast & Smart
-                </Badge>
-                <h1
-                  className="display-4 fw-bold mb-4"
-                  style={{ lineHeight: "1.15", color: "#0e1a13" }}
+                  Shop Now
+                  <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  size="lg"
+                  as={Link}
+                  to="/about"
                 >
-                  Grocery Shopping
-                  <span className="d-block" style={{ color: "#10b981" }}>
-                    Reinvented by AI
-                  </span>
-                </h1>
-                <p
-                  className="lead mb-4"
-                  style={{
-                    fontSize: "1.2rem",
-                    color: "#374151",
-                    opacity: 0.92,
-                  }}
-                >
-                  Discover fresh groceries, smart recommendations, and seamless
-                  delivery. Shop smarter, live better.
-                </p>
-                <div className="d-flex flex-column flex-sm-row gap-3 mb-2">
-                  <Button
-                    as={Link}
-                    to="/register"
-                    size="lg"
-                    className="btn-custom w-100 w-sm-auto"
-                    style={{
-                      background:
-                        "linear-gradient(90deg, #10b981 0%, #34d399 100%)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "12px",
-                      fontSize: "1.1rem",
-                      fontWeight: 700,
-                      boxShadow: "0 4px 15px rgba(16, 185, 129, 0.18)",
-                    }}
-                  >
-                    Start Shopping Now
-                  </Button>
-                  <Button
-                    as={Link}
-                    to="/shop"
-                    variant="outline-success"
-                    size="lg"
-                    className="btn-custom w-100 w-sm-auto"
-                    style={{
-                      borderRadius: "12px",
-                      fontSize: "1.1rem",
-                      fontWeight: 700,
-                      borderWidth: "2px",
-                      color: "#10b981",
-                      borderColor: "#10b981",
-                      background: "white",
-                    }}
-                  >
-                    Browse Products
-                  </Button>
+                  Learn More
+                </Button>
+              </div>
+              <div className="hero-stats">
+                <div className="stat-item">
+                  <div className="stat-number">10K+</div>
+                  <div className="stat-label">Happy Customers</div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-number">500+</div>
+                  <div className="stat-label">Products</div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-number">24/7</div>
+                  <div className="stat-label">Support</div>
                 </div>
               </div>
             </Col>
-            <Col
-              lg={6}
-              className="d-flex justify-content-center align-items-center"
-              style={{ minHeight: "60vh" }}
-            >
-              <div
-                className="hero-image text-center p-4 p-md-5"
-                style={{ width: "100%", maxWidth: 420 }}
-              >
-                <div
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #fef3c7 0%, #a7f3d0 100%)",
-                    borderRadius: "20px",
-                    padding: "40px 20px",
-                    position: "relative",
-                    boxShadow: "0 25px 50px -12px rgba(16, 185, 129, 0.10)",
-                  }}
-                >
-                  <div style={{ fontSize: "7rem", marginBottom: "20px" }}>
-                    🛒
-                  </div>
-                  <h3 className="fw-bold mb-2" style={{ color: "#0e1a13" }}>
-                    Smart Cart
-                  </h3>
-                  <p className="mb-0" style={{ color: "#10b981" }}>
-                    AI-powered recommendations
-                  </p>
+            <Col lg={6} className="hero-image">
+              <div className="hero-image-container">
+                <img
+                  src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=400&fit=crop"
+                  alt="Fresh Groceries"
+                  className="hero-main-image"
+                />
+                <div className="floating-card card-1">
+                  <FontAwesomeIcon icon={faTruck} className="text-primary" />
+                  <span>Fast Delivery</span>
+                </div>
+                <div className="floating-card card-2">
+                  <FontAwesomeIcon
+                    icon={faShieldAlt}
+                    className="text-success"
+                  />
+                  <span>100% Fresh</span>
                 </div>
               </div>
             </Col>
@@ -214,102 +239,52 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section
-        className="features-section py-5"
-        style={{ background: "white" }}
-      >
+      <section className="features-section py-5">
         <Container>
           <Row className="text-center mb-5">
             <Col>
-              <h2 className="fw-bold mb-3" style={{ color: "#1e293b" }}>
-                Why Choose SmartShop?
-              </h2>
-              <p className="lead text-muted">
-                Experience the future of grocery shopping with our innovative
-                features
+              <h2 className="section-title">Why Choose Us</h2>
+              <p className="section-subtitle">
+                We're committed to providing the best grocery shopping
+                experience
               </p>
             </Col>
           </Row>
-          <Row className="g-4">
-            <Col md={4}>
-              <div className="text-center p-4">
-                <div
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    background:
-                      "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 20px",
-                    fontSize: "2rem",
-                  }}
-                >
-                  🤖
+          <Row>
+            <Col lg={3} md={6} className="mb-4">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faTruck} />
                 </div>
-                <h4 className="fw-bold mb-3" style={{ color: "#1e293b" }}>
-                  AI Recommendations
-                </h4>
-                <p className="text-muted">
-                  Get personalized product suggestions based on your preferences
-                  and shopping history
-                </p>
+                <h4>Fast Delivery</h4>
+                <p>Same-day delivery for orders placed before 2 PM</p>
               </div>
             </Col>
-            <Col md={4}>
-              <div className="text-center p-4">
-                <div
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    background:
-                      "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 20px",
-                    fontSize: "2rem",
-                  }}
-                >
-                  ⚡
+            <Col lg={3} md={6} className="mb-4">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faLeaf} />
                 </div>
-                <h4 className="fw-bold mb-3" style={{ color: "#1e293b" }}>
-                  Fast Delivery
-                </h4>
-                <p className="text-muted">
-                  Same-day delivery available for fresh groceries and household
-                  essentials
-                </p>
+                <h4>Fresh Products</h4>
+                <p>Handpicked fresh products from local farmers</p>
               </div>
             </Col>
-            <Col md={4}>
-              <div className="text-center p-4">
-                <div
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    background:
-                      "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 20px",
-                    fontSize: "2rem",
-                  }}
-                >
-                  🌱
+            <Col lg={3} md={6} className="mb-4">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faShieldAlt} />
                 </div>
-                <h4 className="fw-bold mb-3" style={{ color: "#1e293b" }}>
-                  Fresh & Organic
-                </h4>
-                <p className="text-muted">
-                  Premium quality products sourced from local farms and trusted
-                  suppliers
-                </p>
+                <h4>Quality Guarantee</h4>
+                <p>100% satisfaction guarantee on all products</p>
+              </div>
+            </Col>
+            <Col lg={3} md={6} className="mb-4">
+              <div className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faClock} />
+                </div>
+                <h4>24/7 Support</h4>
+                <p>Round-the-clock customer support available</p>
               </div>
             </Col>
           </Row>
@@ -317,55 +292,43 @@ const Home = () => {
       </section>
 
       {/* Categories Section */}
-      <section
-        className="categories-section py-5"
-        style={{ background: "#f8fafc" }}
-      >
+      <section className="categories-section py-5 bg-light">
         <Container>
           <Row className="text-center mb-5">
             <Col>
-              <h2 className="fw-bold mb-3" style={{ color: "#1e293b" }}>
-                Shop by Category
-              </h2>
-              <p className="lead text-muted">
-                Explore our wide range of grocery categories
+              <h2 className="section-title">Shop by Category</h2>
+              <p className="section-subtitle">
+                Explore our wide range of fresh products
               </p>
             </Col>
           </Row>
-          <Row className="g-4">
+          <Row>
             {categories.map((category, index) => (
-              <Col key={index} xs={6} md={4} lg={2}>
-                <Link to="/shop" className="text-decoration-none">
-                  <Card
-                    className="h-100 text-center border-0 shadow-sm"
-                    style={{
-                      borderRadius: "16px",
-                      transition: "transform 0.2s ease-in-out",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.transform = "translateY(-5px)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.transform = "translateY(0)")
-                    }
-                  >
-                    <Card.Body className="p-4">
-                      <div style={{ fontSize: "3rem", marginBottom: "15px" }}>
-                        {category.icon}
-                      </div>
-                      <h6 className="fw-bold mb-2" style={{ color: "#1e293b" }}>
-                        {category.name}
-                      </h6>
-                      <p
-                        className="text-muted mb-0"
-                        style={{ fontSize: "0.9rem" }}
-                      >
-                        {category.count} items
-                      </p>
-                    </Card.Body>
-                  </Card>
-                </Link>
+              <Col lg={4} md={6} className="mb-4" key={index}>
+                <Card className="category-card h-100">
+                  <div className="category-image-container">
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="category-image"
+                    />
+                    <div className="category-overlay">
+                      <div className="category-icon">{category.icon}</div>
+                    </div>
+                  </div>
+                  <Card.Body className="text-center">
+                    <h5 className="category-title">{category.name}</h5>
+                    <p className="category-count">{category.count} Products</p>
+                    <Button
+                      variant="outline-primary"
+                      as={Link}
+                      to={`/shop?category=${category.name}`}
+                    >
+                      Explore
+                      <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                    </Button>
+                  </Card.Body>
+                </Card>
               </Col>
             ))}
           </Row>
@@ -373,151 +336,204 @@ const Home = () => {
       </section>
 
       {/* Featured Products Section */}
-      <section
-        className="featured-products py-5"
-        style={{ background: "white" }}
-      >
+      <section className="featured-products-section py-5">
         <Container>
           <Row className="text-center mb-5">
             <Col>
-              <h2 className="fw-bold mb-3" style={{ color: "#1e293b" }}>
-                Featured Products
-              </h2>
-              <p className="lead text-muted">Handpicked products for you</p>
+              <h2 className="section-title">Featured Products</h2>
+              <p className="section-subtitle">
+                Handpicked fresh products for you
+              </p>
             </Col>
           </Row>
-          <Row className="g-4">
+          <Row>
             {featuredProducts.map((product) => (
-              <Col key={product.id} xs={12} sm={6} lg={3}>
-                <Card
-                  className="h-100 border-0 shadow-sm"
-                  style={{
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                    transition: "transform 0.2s ease-in-out",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.transform = "translateY(-5px)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.transform = "translateY(0)")
-                  }
-                >
-                  <div style={{ position: "relative" }}>
-                    <Card.Img
-                      variant="top"
+              <Col lg={3} md={6} className="mb-4" key={product.id}>
+                <Card className="product-card h-100">
+                  <div className="product-image-container">
+                    <img
                       src={product.image}
-                      style={{ height: "200px", objectFit: "cover" }}
+                      alt={product.name}
+                      className="product-image"
                     />
-                    <Badge
-                      bg="danger"
-                      style={{
-                        position: "absolute",
-                        top: "10px",
-                        left: "10px",
-                        fontSize: "0.8rem",
-                      }}
-                    >
-                      -{product.discount}%
-                    </Badge>
-                  </div>
-                  <Card.Body className="p-4">
-                    <div className="d-flex align-items-center mb-2">
-                      <Badge
-                        bg="light"
-                        text="dark"
-                        style={{ fontSize: "0.7rem" }}
+                    <div className="product-badges">
+                      {product.stock <= 10 && product.stock > 0 && (
+                        <Badge bg="warning" className="stock-badge">
+                          <FontAwesomeIcon icon={faClock} className="me-1" />
+                          Low Stock
+                        </Badge>
+                      )}
+                      {product.stock > 50 && (
+                        <Badge bg="success" className="stock-badge">
+                          <FontAwesomeIcon
+                            icon={faCheckCircle}
+                            className="me-1"
+                          />
+                          In Stock
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="product-actions">
+                      <Button variant="light" size="sm" className="action-btn">
+                        <FontAwesomeIcon icon={farHeart} />
+                      </Button>
+                      <Button
+                        variant="light"
+                        size="sm"
+                        className="action-btn"
+                        as={Link}
+                        to={`/products/${product.id}`}
                       >
-                        {product.category}
-                      </Badge>
-                      <div className="ms-auto d-flex align-items-center">
-                        <span style={{ fontSize: "0.9rem", color: "#fbbf24" }}>
-                          ★
-                        </span>
-                        <span
-                          className="ms-1"
-                          style={{ fontSize: "0.9rem", color: "#6b7280" }}
-                        >
-                          {product.rating}
+                        <FontAwesomeIcon icon={faEye} />
+                      </Button>
+                    </div>
+                  </div>
+                  <Card.Body>
+                    <div className="product-info">
+                      <div className="product-category">{product.category}</div>
+                      <h6 className="product-title">{product.name}</h6>
+                      <div className="product-rating">
+                        <div className="rating-stars">
+                          {[...Array(5)].map((_, i) => (
+                            <FontAwesomeIcon
+                              key={i}
+                              icon={faStar}
+                              className={
+                                i < Math.floor(product.rating)
+                                  ? "text-warning"
+                                  : "text-muted"
+                              }
+                            />
+                          ))}
+                        </div>
+                        <span className="rating-text">
+                          {product.rating} (120)
                         </span>
                       </div>
+                      <div className="product-price">
+                        <span className="current-price">
+                          ₨{product.price.toLocaleString()}
+                        </span>
+                        {product.originalPrice && (
+                          <>
+                            <span className="original-price">
+                              ₨{product.originalPrice.toLocaleString()}
+                            </span>
+                            <span className="discount-badge">
+                              {product.discount}% OFF
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <h6 className="fw-bold mb-2" style={{ color: "#1e293b" }}>
-                      {product.name}
-                    </h6>
-                    <div className="d-flex align-items-center">
-                      <span
-                        className="fw-bold text-success me-2"
-                        style={{ fontSize: "1.1rem" }}
+                    <div className="product-actions-bottom">
+                      <Button variant="primary" className="add-to-cart-btn">
+                        <FontAwesomeIcon icon={faShoppingCart} />
+                        Add to Cart
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        className="quick-view-btn"
+                        as={Link}
+                        to={`/products/${product.id}`}
                       >
-                        ${product.price}
-                      </span>
-                      <span
-                        className="text-muted text-decoration-line-through"
-                        style={{ fontSize: "0.9rem" }}
-                      >
-                        ${product.originalPrice}
-                      </span>
+                        <FontAwesomeIcon icon={faEye} />
+                        Quick View
+                      </Button>
                     </div>
                   </Card.Body>
                 </Card>
               </Col>
             ))}
           </Row>
-          <Row className="text-center mt-5">
+          <Row className="text-center mt-4">
             <Col>
-              <Link to="/shop">
-                <Button
-                  variant="outline-success"
-                  size="lg"
-                  className="px-4 py-3 fw-bold"
-                  style={{
-                    borderRadius: "12px",
-                    fontSize: "1.1rem",
-                    borderWidth: "2px",
-                  }}
-                >
-                  View All Products
-                </Button>
-              </Link>
+              <Button variant="outline-primary" size="lg" as={Link} to="/shop">
+                View All Products
+                <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+              </Button>
             </Col>
           </Row>
         </Container>
       </section>
 
-      {/* CTA Section */}
-      <section
-        className="cta-section py-5"
-        style={{
-          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-          color: "white",
-        }}
-      >
+      {/* Testimonials Section */}
+      <section className="testimonials-section py-5 bg-light">
         <Container>
-          <Row className="text-center align-items-center">
-            <Col lg={8} className="mb-4 mb-lg-0">
-              <h2 className="fw-bold mb-3">Ready to Start Shopping?</h2>
-              <p className="lead mb-0" style={{ opacity: 0.9 }}>
-                Join thousands of satisfied customers who trust SmartShop for
-                their grocery needs
+          <Row className="text-center mb-5">
+            <Col>
+              <h2 className="section-title">What Our Customers Say</h2>
+              <p className="section-subtitle">
+                Don't just take our word for it
+              </p>
+            </Col>
+          </Row>
+          <Row>
+            {testimonials.map((testimonial) => (
+              <Col lg={4} md={6} className="mb-4" key={testimonial.id}>
+                <Card className="testimonial-card h-100">
+                  <Card.Body className="text-center">
+                    <div className="testimonial-avatar">
+                      <img src={testimonial.avatar} alt={testimonial.name} />
+                    </div>
+                    <div className="testimonial-rating mb-3">
+                      {[...Array(5)].map((_, i) => (
+                        <FontAwesomeIcon
+                          key={i}
+                          icon={faStar}
+                          className="text-warning"
+                        />
+                      ))}
+                    </div>
+                    <blockquote className="testimonial-content">
+                      <FontAwesomeIcon
+                        icon={faQuoteLeft}
+                        className="quote-icon"
+                      />
+                      {testimonial.content}
+                    </blockquote>
+                    <div className="testimonial-author">
+                      <h6 className="mb-1">{testimonial.name}</h6>
+                      <small className="text-muted">{testimonial.role}</small>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Container>
+      </section>
+
+      {/* CTA Section */}
+      <section className="cta-section py-5">
+        <Container>
+          <Row className="align-items-center">
+            <Col lg={8} className="text-center text-lg-start">
+              <h2 className="cta-title">Ready to Start Shopping?</h2>
+              <p className="cta-subtitle">
+                Join thousands of satisfied customers who trust us for their
+                daily groceries
               </p>
             </Col>
             <Col lg={4} className="text-center text-lg-end">
-              <Link to="/register">
-                <Button
-                  size="lg"
-                  className="px-4 py-3 fw-bold"
-                  style={{
-                    background: "white",
-                    color: "#10b981",
-                    border: "none",
-                    borderRadius: "12px",
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  Get Started Today
-                </Button>
-              </Link>
+              <Button
+                variant="light"
+                size="lg"
+                as={Link}
+                to="/shop"
+                style={{
+                  background: "rgba(255, 255, 255, 0.9)",
+                  border: "none",
+                  color: "#38e07b",
+                  fontWeight: "600",
+                  padding: "0.75rem 2rem",
+                  borderRadius: "12px",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                Start Shopping Now
+                <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+              </Button>
             </Col>
           </Row>
         </Container>

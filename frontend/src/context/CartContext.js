@@ -1,32 +1,73 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { toast } from "react-toastify";
+import { AuthContext } from "./AuthContext";
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  // Initialize cart from localStorage or empty array
-  const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem("cart");
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+  const { user } = useContext(AuthContext);
 
-  const [coupon, setCoupon] = useState(() => {
-    const savedCoupon = localStorage.getItem("coupon");
-    return savedCoupon ? JSON.parse(savedCoupon) : null;
-  });
+  // Get user-specific cart key
+  const getCartKey = () => {
+    return user ? `cart_${user.id}` : "cart_guest";
+  };
+
+  const getCouponKey = () => {
+    return user ? `coupon_${user.id}` : "coupon_guest";
+  };
+
+  // Initialize cart from localStorage or empty array
+  const [cartItems, setCartItems] = useState([]);
+  const [coupon, setCoupon] = useState(null);
+
+  // Initialize cart and coupon when component mounts or user changes
+  useEffect(() => {
+    const cartKey = user ? `cart_${user.id}` : "cart_guest";
+    const savedCart = localStorage.getItem(cartKey);
+    setCartItems(savedCart ? JSON.parse(savedCart) : []);
+
+    const couponKey = user ? `coupon_${user.id}` : "coupon_guest";
+    const savedCoupon = localStorage.getItem(couponKey);
+    setCoupon(savedCoupon ? JSON.parse(savedCoupon) : null);
+
+    // Clear guest cart when user logs in (to prevent mixing guest and user carts)
+    if (user && localStorage.getItem("cart_guest")) {
+      localStorage.removeItem("cart_guest");
+      localStorage.removeItem("coupon_guest");
+    }
+
+    // Debug logging
+    console.log(
+      `Cart loaded for user: ${
+        user ? user.id : "guest"
+      }, cartKey: ${cartKey}, items: ${
+        savedCart ? JSON.parse(savedCart).length : 0
+      }`
+    );
+  }, [user]);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    const cartKey = user ? `cart_${user.id}` : "cart_guest";
+    localStorage.setItem(cartKey, JSON.stringify(cartItems));
+    console.log(
+      `Cart saved for user: ${
+        user ? user.id : "guest"
+      }, cartKey: ${cartKey}, items: ${cartItems.length}`
+    );
+  }, [cartItems, user]);
 
   // Save coupon to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("coupon", JSON.stringify(coupon));
-  }, [coupon]);
+    const couponKey = user ? `coupon_${user.id}` : "coupon_guest";
+    localStorage.setItem(couponKey, JSON.stringify(coupon));
+  }, [coupon, user]);
 
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
+    console.log(
+      `Adding ${product.name} to cart for user: ${user ? user.id : "guest"}`
+    );
     setCartItems((prevItems) => {
       // Check if item already exists in cart
       const existingItemIndex = prevItems.findIndex(
@@ -157,6 +198,27 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((count, item) => count + item.quantity, 0);
   };
 
+  // Debug function to log current cart state
+  const debugCart = () => {
+    const cartKey = user ? `cart_${user.id}` : "cart_guest";
+    console.log(`=== Cart Debug Info ===`);
+    console.log(`Current user: ${user ? user.id : "guest"}`);
+    console.log(`Cart key: ${cartKey}`);
+    console.log(`Cart items in state: ${cartItems.length}`);
+    console.log(
+      `Cart items in localStorage: ${
+        localStorage.getItem(cartKey)
+          ? JSON.parse(localStorage.getItem(cartKey)).length
+          : 0
+      }`
+    );
+    console.log(
+      `All localStorage keys:`,
+      Object.keys(localStorage).filter((key) => key.startsWith("cart_"))
+    );
+    console.log(`======================`);
+  };
+
   // Context value
   const value = {
     cartItems,
@@ -169,6 +231,7 @@ export const CartProvider = ({ children }) => {
     removeCoupon,
     getCartTotals,
     getCartCount,
+    debugCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

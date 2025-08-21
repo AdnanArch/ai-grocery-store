@@ -6,8 +6,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "${MYSQL_PORT:-3307}:3306" # Changed from 3306 to 3307 to avoid conflicts
     volumes:
@@ -41,9 +39,11 @@ services:
       dockerfile: Dockerfile
     container_name: grocery-backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&autoReconnect=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       JWT_KEY: ${JWT_KEY}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
       JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS}
@@ -55,10 +55,9 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_AUTH: ${MAIL_AUTH}
       MAIL_STARTTLS: ${MAIL_STARTTLS}
-      JAZZCASH_MERCHANT_ID: ${JAZZCASH_MERCHANT_ID}
-      JAZZCASH_PASSWORD: ${JAZZCASH_PASSWORD}
-      JAZZCASH_RETURN_URL: ${JAZZCASH_RETURN_URL}
-      JAZZCASH_API_URL: ${JAZZCASH_API_URL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_URL: ${OPENAI_API_URL:-https://api.openai.com/v1/chat/completions}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-3.5-turbo}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       FRONTEND_URL: ${FRONTEND_URL}
       AI_SERVICE_URL: ${AI_SERVICE_URL}
@@ -108,6 +107,7 @@ services:
       REACT_APP_API_URL: ${REACT_APP_API_URL}
       REACT_APP_AI_SERVICE_URL: ${REACT_APP_AI_SERVICE_URL}
       REACT_APP_STRIPE_PUBLISHABLE_KEY: ${REACT_APP_STRIPE_PUBLISHABLE_KEY}
+      FRONTEND_URL: ${FRONTEND_URL}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:

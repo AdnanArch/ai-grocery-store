@@ -6,7 +6,7 @@ A full-stack e-commerce application with AI-powered product recommendations, bui
 
 - **AI-Powered Recommendations**: Machine learning-based product suggestions
 - **User Authentication**: JWT-based authentication with email verification
-- **Payment Integration**: Stripe and JazzCash payment gateways
+- **Payment Integration**: Stripe payment gateway with webhook support
 - **Real-time Notifications**: WebSocket-based notifications
 - **Admin Dashboard**: Analytics and management tools
 - **Responsive Design**: Mobile-first approach
@@ -71,11 +71,8 @@ MAIL_PASSWORD=your_gmail_app_password
 MAIL_AUTH=true
 MAIL_STARTTLS=true
 
-# JazzCash Configuration
-JAZZCASH_MERCHANT_ID=your_jazzcash_merchant_id
-JAZZCASH_PASSWORD=your_jazzcash_password
-JAZZCASH_RETURN_URL=http://localhost:3000/payment-success
-JAZZCASH_API_URL=https://sandbox.jazzcash.com.pk/ApplicationAPI/API/2.0/Purchase/DoMWalletTransaction
+# Stripe Webhook Configuration
+STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret_here
 
 # Application URLs
 FRONTEND_URL=http://localhost:3000

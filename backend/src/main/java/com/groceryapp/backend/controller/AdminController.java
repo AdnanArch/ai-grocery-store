@@ -78,26 +78,41 @@ public class AdminController {
     }
 
     @PostMapping("/products")
-    public ResponseEntity<?> createProduct(@RequestBody Product product) {
+    public ResponseEntity<?> createProduct(@RequestBody Map<String, Object> request) {
         try {
+            // Extract product data
+            String name = (String) request.get("name");
+            String description = (String) request.get("description");
+            Number priceNumber = (Number) request.get("price");
+            Number stockNumber = (Number) request.get("stock");
+            Map<String, Object> categoryMap = (Map<String, Object>) request.get("category");
+            String imageUrl = (String) request.get("imageUrl");
+            String imageAltText = (String) request.get("imageAltText");
+            
             // Validate required fields
-            if (product.getName() == null || product.getName().trim().isEmpty()) {
+            if (name == null || name.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Product name is required"));
             }
-            if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            if (priceNumber == null || priceNumber.doubleValue() <= 0) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Product price must be greater than 0"));
             }
-            if (product.getStock() == null || product.getStock() < 0) {
+            if (stockNumber == null || stockNumber.intValue() < 0) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Product stock must be non-negative"));
             }
 
-            // Set timestamps
+            // Create product object
+            Product product = new Product();
+            product.setName(name);
+            product.setDescription(description);
+            product.setPrice(BigDecimal.valueOf(priceNumber.doubleValue()));
+            product.setStock(stockNumber.intValue());
             product.setCreatedAt(Instant.now());
             product.setUpdatedAt(Instant.now());
             
-            // Handle category - ensure it's properly set
-            if (product.getCategory() != null && product.getCategory().getId() != null) {
-                Category category = categoryRepository.findById(product.getCategory().getId()).orElse(null);
+            // Handle category
+            if (categoryMap != null && categoryMap.get("id") != null) {
+                Long categoryId = Long.valueOf(categoryMap.get("id").toString());
+                Category category = categoryRepository.findById(categoryId).orElse(null);
                 if (category == null) {
                     return ResponseEntity.badRequest().body(Map.of("message", "Invalid category ID"));
                 }
@@ -106,22 +121,20 @@ public class AdminController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Category is required"));
             }
             
-            // Ensure stock is not null and has a reasonable default
-            if (product.getStock() == null) {
-                product.setStock(0);
-            }
-            
             // Save the product first
             Product savedProduct = productRepository.save(product);
             
-            // Handle images if provided
-            if (product.getImages() != null && !product.getImages().isEmpty()) {
-                for (ProductImage image : product.getImages()) {
-                    image.setProduct(savedProduct);
-                    productImageRepository.save(image);
-                }
+            // Handle image if provided
+            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                ProductImage image = new ProductImage();
+                image.setProduct(savedProduct);
+                image.setUrl(imageUrl);
+                image.setAltText(imageAltText != null ? imageAltText : name);
+                image.setPrimary(true);
+                productImageRepository.save(image);
+                
                 // Reload the product with images
-                savedProduct = productRepository.findById(savedProduct.getId()).orElse(savedProduct);
+                savedProduct = productRepository.findByIdWithCategoryAndImages(savedProduct.getId()).orElse(savedProduct);
             }
             
             return ResponseEntity.ok(savedProduct);
@@ -131,33 +144,44 @@ public class AdminController {
     }
 
     @PutMapping("/products/{id}")
-    public ResponseEntity<?> updateProduct(@PathVariable Long id, @RequestBody Product product) {
+    public ResponseEntity<?> updateProduct(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         try {
             Product existingProduct = productRepository.findById(id).orElse(null);
             if (existingProduct == null) {
                 return ResponseEntity.notFound().build();
             }
             
+            // Extract product data
+            String name = (String) request.get("name");
+            String description = (String) request.get("description");
+            Number priceNumber = (Number) request.get("price");
+            Number stockNumber = (Number) request.get("stock");
+            Map<String, Object> categoryMap = (Map<String, Object>) request.get("category");
+            String imageUrl = (String) request.get("imageUrl");
+            String imageAltText = (String) request.get("imageAltText");
+            
             // Validate required fields
-            if (product.getName() == null || product.getName().trim().isEmpty()) {
+            if (name == null || name.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Product name is required"));
             }
-            if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            if (priceNumber == null || priceNumber.doubleValue() <= 0) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Product price must be greater than 0"));
             }
-            if (product.getStock() == null || product.getStock() < 0) {
+            if (stockNumber == null || stockNumber.intValue() < 0) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Product stock must be non-negative"));
             }
             
-            existingProduct.setName(product.getName());
-            existingProduct.setDescription(product.getDescription());
-            existingProduct.setPrice(product.getPrice());
-            existingProduct.setStock(product.getStock());
+            // Update product fields
+            existingProduct.setName(name);
+            existingProduct.setDescription(description);
+            existingProduct.setPrice(BigDecimal.valueOf(priceNumber.doubleValue()));
+            existingProduct.setStock(stockNumber.intValue());
             existingProduct.setUpdatedAt(Instant.now());
             
-            // Handle category - ensure it's properly set
-            if (product.getCategory() != null && product.getCategory().getId() != null) {
-                Category category = categoryRepository.findById(product.getCategory().getId()).orElse(null);
+            // Handle category
+            if (categoryMap != null && categoryMap.get("id") != null) {
+                Long categoryId = Long.valueOf(categoryMap.get("id").toString());
+                Category category = categoryRepository.findById(categoryId).orElse(null);
                 if (category == null) {
                     return ResponseEntity.badRequest().body(Map.of("message", "Invalid category ID"));
                 }
@@ -169,22 +193,24 @@ public class AdminController {
             // Save the updated product
             Product updatedProduct = productRepository.save(existingProduct);
             
-            // Handle images if provided
-            if (product.getImages() != null && !product.getImages().isEmpty()) {
+            // Handle image if provided
+            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
                 // Clear existing images
                 List<ProductImage> existingImages = productImageRepository.findByProductId(id);
                 for (ProductImage existingImage : existingImages) {
                     productImageRepository.delete(existingImage);
                 }
                 
-                // Add new images
-                for (ProductImage image : product.getImages()) {
-                    image.setProduct(updatedProduct);
-                    productImageRepository.save(image);
-                }
+                // Add new image
+                ProductImage image = new ProductImage();
+                image.setProduct(updatedProduct);
+                image.setUrl(imageUrl);
+                image.setAltText(imageAltText != null ? imageAltText : name);
+                image.setPrimary(true);
+                productImageRepository.save(image);
                 
                 // Reload the product with images
-                updatedProduct = productRepository.findById(updatedProduct.getId()).orElse(updatedProduct);
+                updatedProduct = productRepository.findByIdWithCategoryAndImages(updatedProduct.getId()).orElse(updatedProduct);
             }
             
             return ResponseEntity.ok(updatedProduct);

@@ -53,4 +53,14 @@ public class Product {
     @JsonIgnore
     @ToString.Exclude
     private Set<OrderItem> orderItems;
+
+    @OneToMany(mappedBy = "product")
+    @JsonIgnore
+    @ToString.Exclude
+    private Set<Review> reviews;
+
+    @OneToMany(mappedBy = "product")
+    @JsonIgnore
+    @ToString.Exclude
+    private Set<Wishlist> wishlists;
 }

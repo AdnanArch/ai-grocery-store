@@ -125,7 +125,15 @@ const Shop = () => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get("/api/categories");
-        setCategories(response.data);
+        // Remove duplicates based on id and name
+        const uniqueCategories = response.data.filter(
+          (category, index, self) =>
+            index ===
+            self.findIndex(
+              (c) => c.id === category.id && c.name === category.name
+            )
+        );
+        setCategories(uniqueCategories);
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
@@ -304,15 +312,11 @@ const Shop = () => {
       <div className="shop-hero">
         <Container>
           <div className="hero-content text-center">
-            <div className="hero-badge mb-3">
-              <FontAwesomeIcon icon={faLeaf} className="me-2" />
-              Fresh & Organic
-            </div>
-            <h1 className="hero-title">
-              Discover Fresh Products
-              <span className="text-gradient"> Delivered to You</span>
-            </h1>
+            <h1 className="hero-title">Fresh & Organic</h1>
             <p className="hero-subtitle">
+              Discover Fresh Products Delivered to You
+            </p>
+            <p className="hero-description">
               Explore our curated collection of premium groceries and household
               essentials
             </p>
@@ -596,182 +600,151 @@ const Shop = () => {
             </Button>
           </div>
         ) : (
-          <Row
+          <div
             className={viewMode === "list" ? "products-list" : "products-grid"}
           >
             {products.map((product) => (
-              <Col
+              <Card
                 key={product.id}
-                className={viewMode === "list" ? "mb-3" : "mb-4"}
-                lg={viewMode === "list" ? 12 : 3}
-                md={viewMode === "list" ? 12 : 4}
-                sm={viewMode === "list" ? 12 : 6}
+                className={`product-card ${
+                  viewMode === "list"
+                    ? "product-card-list"
+                    : "product-card-grid"
+                }`}
               >
-                <Card
-                  className={`product-card ${
-                    viewMode === "list"
-                      ? "product-card-list"
-                      : "product-card-grid"
-                  }`}
-                >
-                  <div className="product-image-container">
-                    <Card.Img
-                      variant="top"
-                      src={
-                        product.images && product.images.length > 0
-                          ? product.images[0].url
-                          : "/placeholder-product.jpg"
-                      }
-                      alt={product.name}
-                      className="product-image"
-                      onError={(e) => {
-                        e.target.src = "/placeholder-product.jpg";
-                      }}
-                    />
+                <div className="product-image-container">
+                  <img
+                    src={
+                      product.images && product.images.length > 0
+                        ? product.images[0].url
+                        : "/placeholder-product.jpg"
+                    }
+                    alt={product.name}
+                    className="product-image"
+                    onError={(e) => {
+                      e.target.src = "/placeholder-product.jpg";
+                    }}
+                    loading="lazy"
+                  />
 
-                    {/* Product Badges */}
-                    <div className="product-badges">
-                      {product.stock <= 10 && product.stock > 0 && (
-                        <Badge bg="warning" className="stock-badge">
-                          <FontAwesomeIcon icon={faFire} className="me-1" />
-                          Low Stock
-                        </Badge>
-                      )}
-                      {product.stock === 0 && (
-                        <Badge bg="danger" className="stock-badge">
-                          Out of Stock
-                        </Badge>
-                      )}
-                      {product.stock > 50 && (
-                        <Badge bg="success" className="stock-badge">
-                          <FontAwesomeIcon
-                            icon={faCheckCircle}
-                            className="me-1"
-                          />
-                          In Stock
-                        </Badge>
-                      )}
+                  {/* Product Badges */}
+                  <div className="product-badges">
+                    {product.stock <= 10 && product.stock > 0 && (
+                      <Badge bg="warning" className="stock-badge">
+                        <FontAwesomeIcon icon={faFire} className="me-1" />
+                        Low Stock
+                      </Badge>
+                    )}
+                    {product.stock === 0 && (
+                      <Badge bg="danger" className="stock-badge">
+                        Out of Stock
+                      </Badge>
+                    )}
+                    {product.stock > 50 && (
+                      <Badge bg="success" className="stock-badge">
+                        <FontAwesomeIcon
+                          icon={faCheckCircle}
+                          className="me-1"
+                        />
+                        In Stock
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="product-actions">
+                    <Button
+                      variant="light"
+                      size="sm"
+                      className="action-btn"
+                      onClick={() => toggleWishlist(product.id)}
+                    >
+                      <FontAwesomeIcon
+                        icon={wishlist.has(product.id) ? faHeart : farHeart}
+                        className={
+                          wishlist.has(product.id) ? "text-danger" : ""
+                        }
+                      />
+                    </Button>
+                    <Button
+                      variant="light"
+                      size="sm"
+                      className="action-btn"
+                      as={Link}
+                      to={`/products/${product.id}`}
+                    >
+                      <FontAwesomeIcon icon={faEye} />
+                    </Button>
+                  </div>
+                </div>
+
+                <Card.Body>
+                  <div className="product-info">
+                    <div className="product-category">
+                      {product.category?.name || "Uncategorized"}
+                    </div>
+                    <h6 className="product-title">{product.name}</h6>
+                    <p className="product-description">
+                      {product.description?.substring(0, 80)}...
+                    </p>
+
+                    <div className="product-rating">
+                      <div className="rating-stars">
+                        <FontAwesomeIcon icon={faStar} />
+                        <FontAwesomeIcon icon={faStar} />
+                        <FontAwesomeIcon icon={faStar} />
+                        <FontAwesomeIcon icon={faStar} />
+                        <FontAwesomeIcon icon={faStar} />
+                      </div>
+                      <span className="rating-text">4.5 (120)</span>
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="product-actions">
-                      <Button
-                        variant="light"
-                        size="sm"
-                        className="action-btn"
-                        onClick={() => toggleWishlist(product.id)}
-                      >
-                        <FontAwesomeIcon
-                          icon={wishlist.has(product.id) ? faHeart : farHeart}
-                          className={
-                            wishlist.has(product.id) ? "text-danger" : ""
-                          }
-                        />
-                      </Button>
-                      <Button
-                        variant="light"
-                        size="sm"
-                        className="action-btn"
-                        as={Link}
-                        to={`/products/${product.id}`}
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                      </Button>
+                    <div className="product-price">
+                      <span className="current-price">
+                        ₨{product.price?.toLocaleString()}
+                      </span>
+                      {product.originalPrice &&
+                        product.originalPrice > product.price && (
+                          <>
+                            <span className="original-price">
+                              ₨{product.originalPrice?.toLocaleString()}
+                            </span>
+                            <span className="discount-badge">
+                              {Math.round(
+                                ((product.originalPrice - product.price) /
+                                  product.originalPrice) *
+                                  100
+                              )}
+                              % OFF
+                            </span>
+                          </>
+                        )}
                     </div>
                   </div>
 
-                  <Card.Body
-                    className={
-                      viewMode === "list" ? "d-flex align-items-center" : ""
-                    }
-                  >
-                    <div className={viewMode === "list" ? "flex-grow-1" : ""}>
-                      <div className="product-category mb-2">
-                        <Badge
-                          bg="light"
-                          text="dark"
-                          className="category-badge"
-                        >
-                          {product.category?.name || "Uncategorized"}
-                        </Badge>
-                      </div>
-
-                      <Card.Title
-                        className={`product-title ${
-                          viewMode === "list" ? "mb-2" : "mb-2"
-                        }`}
-                      >
-                        {product.name}
-                      </Card.Title>
-
-                      <Card.Text
-                        className={`product-description ${
-                          viewMode === "list" ? "mb-3" : "mb-3"
-                        }`}
-                      >
-                        {product.description?.substring(
-                          0,
-                          viewMode === "list" ? 150 : 60
-                        )}
-                        {product.description?.length >
-                        (viewMode === "list" ? 150 : 60)
-                          ? "..."
-                          : ""}
-                      </Card.Text>
-
-                      {viewMode === "list" && (
-                        <div className="product-rating mb-2">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <FontAwesomeIcon
-                              key={star}
-                              icon={faStar}
-                              className="text-warning"
-                              size="sm"
-                            />
-                          ))}
-                          <span className="ms-2 text-muted">(4.5)</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div
-                      className={`product-price-section ${
-                        viewMode === "list" ? "ms-3 text-end" : ""
-                      }`}
+                  <div className="product-actions-bottom">
+                    <Button
+                      variant="primary"
+                      className="add-to-cart-btn"
+                      onClick={() => addToCart(product)}
+                      disabled={product.stock <= 0}
                     >
-                      <div className="product-price mb-2">
-                        <span className="price-amount">
-                          ₨{product.price?.toLocaleString()}
-                        </span>
-                        {product.originalPrice &&
-                          product.originalPrice > product.price && (
-                            <span className="original-price ms-2">
-                              ₨{product.originalPrice?.toLocaleString()}
-                            </span>
-                          )}
-                      </div>
-
-                      <div className="product-actions-bottom">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="add-to-cart-btn"
-                          onClick={() => addToCart(product)}
-                          disabled={product.stock <= 0}
-                        >
-                          <FontAwesomeIcon
-                            icon={faShoppingCart}
-                            className="me-1"
-                          />
-                          {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
+                      <FontAwesomeIcon icon={faShoppingCart} />
+                      {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      className="quick-view-btn"
+                      as={Link}
+                      to={`/products/${product.id}`}
+                    >
+                      <FontAwesomeIcon icon={faEye} />
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
             ))}
-          </Row>
+          </div>
         )}
 
         {/* Enhanced Pagination */}

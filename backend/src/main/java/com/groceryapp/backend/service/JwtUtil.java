@@ -26,6 +26,9 @@ public class JwtUtil {
 
     @Value("${jwt.expiration-ms}")
     private long jwtExpirationMs;
+    
+    // Store the generated key to ensure consistency between signing and verification
+    private SecretKey cachedKey = null;
 
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
@@ -56,9 +59,29 @@ public class JwtUtil {
         return createToken(claims, username);
     }
 
+    private SecretKey getSigningKey() {
+        if (cachedKey != null) {
+            return cachedKey;
+        }
+        
+        try {
+            if (secretKey != null && !secretKey.trim().isEmpty()) {
+                byte[] keyBytes = Base64.getDecoder().decode(secretKey);
+                cachedKey = Keys.hmacShaKeyFor(keyBytes);
+            } else {
+                // Fallback to generating a secure key if none is provided
+                cachedKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+            }
+        } catch (Exception e) {
+            // If the provided key is invalid or too short, generate a secure one
+            cachedKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        }
+        
+        return cachedKey;
+    }
+
     private String createToken(Map<String, Object> claims, String subject) {
-        byte[] keyBytes = Base64.getDecoder().decode(secretKey);
-        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
+        SecretKey key = getSigningKey();
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -83,8 +106,7 @@ public class JwtUtil {
     }
 
     public Claims extractAllClaims(String token) {
-        byte[] keyBytes = Base64.getDecoder().decode(secretKey);
-        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
+        SecretKey key = getSigningKey();
 
         return Jwts.parserBuilder()
                 .setSigningKey(key)

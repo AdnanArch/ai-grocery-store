@@ -144,6 +144,8 @@ const AdminDashboard = () => {
         category: productData.categoryId
           ? { id: parseInt(productData.categoryId) }
           : null,
+        imageUrl: productData.imageUrl || null,
+        imageAltText: productData.imageAltText || null,
       };
 
       let savedProduct;
@@ -159,20 +161,6 @@ const AdminDashboard = () => {
           formattedProductData
         );
         toast.success("Product created successfully");
-      }
-
-      // If image URL is provided, create product image
-      if (productData.imageUrl && savedProduct.data) {
-        try {
-          await api.post(`/api/admin/products/${savedProduct.data.id}/images`, {
-            url: productData.imageUrl,
-            altText: productData.imageAltText || productData.name,
-            isPrimary: true,
-          });
-        } catch (imageError) {
-          console.error("Failed to add product image:", imageError);
-          // Don't fail the whole operation if image fails
-        }
       }
 
       setShowProductModal(false);
@@ -1396,14 +1384,23 @@ const ProductModal = ({ show, onHide, onSubmit, product }) => {
 
   useEffect(() => {
     if (product) {
+      // Get the first image URL if available
+      const firstImageUrl =
+        product.images && product.images.length > 0
+          ? product.images[0].url
+          : "";
+
       setFormData({
         name: product.name || "",
         description: product.description || "",
         price: product.price || "",
         stock: product.stock || "",
         categoryId: product.category?.id || "",
-        imageUrl: "",
-        imageAltText: "",
+        imageUrl: firstImageUrl,
+        imageAltText:
+          product.images && product.images.length > 0
+            ? product.images[0].altText || product.name
+            : "",
       });
     } else {
       setFormData({
@@ -1544,6 +1541,41 @@ const ProductModal = ({ show, onHide, onSubmit, product }) => {
               </Form.Group>
             </Col>
           </Row>
+
+          {/* Image Preview */}
+          {formData.imageUrl && (
+            <Row>
+              <Col md={12}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Image Preview</Form.Label>
+                  <div className="text-center">
+                    <img
+                      src={formData.imageUrl}
+                      alt={formData.imageAltText || "Product preview"}
+                      className="img-fluid rounded"
+                      style={{
+                        maxWidth: "200px",
+                        maxHeight: "200px",
+                        objectFit: "cover",
+                        border: "1px solid #dee2e6",
+                        background: "#f8f9fa",
+                      }}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.nextSibling.style.display = "block";
+                      }}
+                    />
+                    <div
+                      className="text-muted mt-2"
+                      style={{ display: "none" }}
+                    >
+                      Image failed to load. Please check the URL.
+                    </div>
+                  </div>
+                </Form.Group>
+              </Col>
+            </Row>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide}>

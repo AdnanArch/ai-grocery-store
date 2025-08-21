@@ -1,5 +1,6 @@
 package com.groceryapp.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,10 +25,12 @@ public class Order {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"orders", "addresses", "roles"})
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "shipping_address_id")
+    @JsonIgnoreProperties("user")
     private Address shippingAddress;
 
     @Column(nullable = false)
@@ -41,4 +44,9 @@ public class Order {
     @JsonIgnoreProperties("order")
     @ToString.Exclude
     private Set<OrderItem> items;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @JsonIgnore
+    @ToString.Exclude
+    private Set<Payment> payments;
 }

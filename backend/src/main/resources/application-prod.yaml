@@ -39,7 +39,7 @@ logging:
 
 # Security settings
 jwt:
-  key: ${JWT_SECRET_KEY:BBQ3+QolihRQf6BJPXbXO469IbGhSAEnsWOIE9r/Jz8=}
+  key: ${JWT_SECRET_KEY:ZmQ0ZGI5NjQ0MDQwNDIxNDJiZDY4MzJkNGZhNGM2ZmMyM2Y1YTg5ZGE0ODBjM2I4NzE5NzYxZjdjOWIyYzNhNDY=}
   expiration-ms: 3600000 # 1 hour
   refresh-expiration-ms: 86400000 # 24 hours
 

@@ -49,10 +49,11 @@ const PaymentForm = ({ order, onSuccess, onError }) => {
       // Create payment intent on the server
       const {
         data: { clientSecret },
-      } = await api.post("/api/payments/create-intent", {
-        amount: order.totalAmount * 100, // Convert to cents
+      } = await api.post("/api/payments/create-payment-intent", {
+        amount: order.totalAmount,
         currency: "usd",
         orderId: order.id,
+        customerEmail: order.user?.email,
       });
 
       // Confirm payment with Stripe
@@ -72,9 +73,10 @@ const PaymentForm = ({ order, onSuccess, onError }) => {
         onError(stripeError.message);
       } else if (paymentIntent.status === "succeeded") {
         // Update order status
-        await api.put(`/api/orders/${order.id}/payment-status`, {
+        await api.put(`/api/payments/orders/${order.id}/payment-status`, {
           status: "PAID",
-          paymentIntentId: paymentIntent.id,
+          txnRefNumber: paymentIntent.id,
+          responseCode: "00",
         });
 
         onSuccess(paymentIntent);

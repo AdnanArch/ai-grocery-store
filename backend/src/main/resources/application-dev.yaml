@@ -1,8 +1,31 @@
-# Development Email Configuration
-# Uses Gmail SMTP for testing (same as production)
-# For local testing without Gmail, use environment variables to override
-
 spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:grocerystore}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&autoReconnect=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:admin}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+        connection:
+          characterEncoding: utf8
+          useUnicode: true
+
+  # Email Configuration - Gmail SMTP
+  # Production: Uses Gmail SMTP with App Password
+  # Development: Can be overridden with environment variables
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -19,8 +42,36 @@ spring:
           writetimeout: 10000
           quitwait: false
 
-# Logging for email debugging
+server:
+  port: ${SERVER_PORT:8080}
+
+jwt:
+  key: ${JWT_KEY:ZmQ0ZGI5NjQ0MDQwNDIxNDJiZDY4MzJkNGZhNGM2ZmMyM2Y1YTg5ZGE0ODBjM2I4NzE5NzYxZjdjOWIyYzNhNDY=}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000} # 1 hour
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:86400000} # 24 hours
+  header: Authorization
+  prefix: Bearer
+
 logging:
   level:
-    org.springframework.mail: DEBUG
-    com.groceryapp.backend.service.EmailService: DEBUG
+    root: INFO
+    org.springframework.security: DEBUG # TRACE is too verbose for normal use
+
+# Stripe Configuration
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  currency: pkr
+
+# OpenAI Configuration
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}
+    url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
+    model: ${OPENAI_MODEL:gpt-3.5-turbo}
+
+# AI Service Configuration
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://ai-service:5000}

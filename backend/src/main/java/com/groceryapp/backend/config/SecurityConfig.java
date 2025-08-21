@@ -60,7 +60,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // API endpoints
-                        .requestMatchers("/api/auth/**", "/api/products/**", "/api/recommendations/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/products/**", "/api/categories/**", "/api/recommendations/**").permitAll()
                         // Static resources for React app
                         .requestMatchers(
                                 "/",

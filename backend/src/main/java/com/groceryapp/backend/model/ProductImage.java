@@ -25,7 +25,7 @@ public class ProductImage {
     @ToString.Exclude
     private Product product;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     @EqualsAndHashCode.Include
     private String url;
     private String altText;

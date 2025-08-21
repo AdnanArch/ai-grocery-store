@@ -10,6 +10,7 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class OrderItemId implements java.io.Serializable {
     @Column(name = "order_id")
     private Long orderId;

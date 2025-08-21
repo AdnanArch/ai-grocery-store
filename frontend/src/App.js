@@ -32,6 +32,7 @@ import ProductReviews from "./pages/ProductReviews";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import AIRecommendations from "./pages/AIRecommendations";
+import AIChat from "./pages/AIChat";
 
 // Context
 import { AuthProvider, AuthContext } from "./context/AuthContext";
@@ -180,6 +181,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AIRecommendations />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ai-chat"
+                  element={
+                    <ProtectedRoute>
+                      <AIChat />
                     </ProtectedRoute>
                   }
                 />

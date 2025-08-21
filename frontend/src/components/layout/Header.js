@@ -64,17 +64,37 @@ const Header = () => {
               textDecoration: "none",
               display: "flex",
               alignItems: "center",
-              gap: "0.5rem",
+              gap: "0.75rem",
             }}
           >
-            <FontAwesomeIcon
-              icon={faLeaf}
-              style={{
-                color: "#38e07b",
-                fontSize: "1.5rem",
-              }}
-            />
-            SmartShop
+            <div className="logo-container">
+              <div className="logo-icon">
+                <FontAwesomeIcon
+                  icon={faLeaf}
+                  className="logo-leaf"
+                  style={{
+                    color: "#38e07b",
+                    fontSize: "1.8rem",
+                    position: "relative",
+                    zIndex: 2,
+                  }}
+                />
+                <FontAwesomeIcon
+                  icon={faShoppingCart}
+                  className="logo-cart"
+                  style={{
+                    color: "#6366f1",
+                    fontSize: "1.2rem",
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 1,
+                  }}
+                />
+              </div>
+              <span className="logo-text">FreshCart</span>
+            </div>
           </Navbar.Brand>
 
           <Navbar.Toggle
@@ -88,28 +108,32 @@ const Header = () => {
           />
 
           <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto nav-links" style={{ gap: "1rem" }}>
+            <Nav
+              className="me-auto nav-links"
+              style={{ gap: "0.5rem", flexWrap: "nowrap" }}
+            >
               <Nav.Link
                 as={NavLink}
                 to="/shop"
                 className="nav-link-item"
                 style={{
                   fontFamily: "inherit",
-                  fontSize: "0.95rem",
+                  fontSize: "0.9rem",
                   fontWeight: "600",
                   color: "#0e1a13",
-                  padding: "0.75rem 1.25rem",
+                  padding: "0.6rem 1rem",
                   borderRadius: "12px",
                   transition: "all 0.3s ease",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem",
-                  marginRight: "0.5rem",
+                  gap: "0.4rem",
+                  marginRight: "0.3rem",
+                  whiteSpace: "nowrap",
                 }}
               >
                 <FontAwesomeIcon
                   icon={faShoppingBag}
-                  style={{ fontSize: "0.9rem" }}
+                  style={{ fontSize: "0.85rem" }}
                 />
                 Shop
               </Nav.Link>
@@ -119,21 +143,22 @@ const Header = () => {
                 className="nav-link-item"
                 style={{
                   fontFamily: "inherit",
-                  fontSize: "0.95rem",
+                  fontSize: "0.9rem",
                   fontWeight: "600",
                   color: "#0e1a13",
-                  padding: "0.75rem 1.25rem",
+                  padding: "0.6rem 1rem",
                   borderRadius: "12px",
                   transition: "all 0.3s ease",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem",
-                  marginRight: "0.5rem",
+                  gap: "0.4rem",
+                  marginRight: "0.3rem",
+                  whiteSpace: "nowrap",
                 }}
               >
                 <FontAwesomeIcon
                   icon={faReceipt}
-                  style={{ fontSize: "0.9rem" }}
+                  style={{ fontSize: "0.85rem" }}
                 />
                 Orders
               </Nav.Link>
@@ -143,21 +168,22 @@ const Header = () => {
                 className="nav-link-item"
                 style={{
                   fontFamily: "inherit",
-                  fontSize: "0.95rem",
+                  fontSize: "0.9rem",
                   fontWeight: "600",
                   color: "#0e1a13",
-                  padding: "0.75rem 1.25rem",
+                  padding: "0.6rem 1rem",
                   borderRadius: "12px",
                   transition: "all 0.3s ease",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem",
-                  marginRight: "0.5rem",
+                  gap: "0.4rem",
+                  marginRight: "0.3rem",
+                  whiteSpace: "nowrap",
                 }}
               >
                 <FontAwesomeIcon
                   icon={faHeart}
-                  style={{ fontSize: "0.9rem" }}
+                  style={{ fontSize: "0.85rem" }}
                 />
                 Wishlist
               </Nav.Link>
@@ -167,23 +193,49 @@ const Header = () => {
                 className="nav-link-item"
                 style={{
                   fontFamily: "inherit",
-                  fontSize: "0.95rem",
+                  fontSize: "0.9rem",
                   fontWeight: "600",
                   color: "#0e1a13",
-                  padding: "0.75rem 1.25rem",
+                  padding: "0.6rem 1rem",
                   borderRadius: "12px",
                   transition: "all 0.3s ease",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem",
-                  marginRight: "0.5rem",
+                  gap: "0.4rem",
+                  marginRight: "0.3rem",
+                  whiteSpace: "nowrap",
                 }}
               >
                 <FontAwesomeIcon
                   icon={faRobot}
-                  style={{ fontSize: "0.9rem" }}
+                  style={{ fontSize: "0.85rem" }}
                 />
-                AI Recommendations
+                AI Recs
+              </Nav.Link>
+              <Nav.Link
+                as={NavLink}
+                to="/ai-chat"
+                className="nav-link-item"
+                style={{
+                  fontFamily: "inherit",
+                  fontSize: "0.9rem",
+                  fontWeight: "600",
+                  color: "#0e1a13",
+                  padding: "0.6rem 1rem",
+                  borderRadius: "12px",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  marginRight: "0.3rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faRobot}
+                  style={{ fontSize: "0.85rem" }}
+                />
+                AI Chat
               </Nav.Link>
               {isAdmin && (
                 <Nav.Link
@@ -192,22 +244,23 @@ const Header = () => {
                   className="nav-link-item admin-link"
                   style={{
                     fontFamily: "inherit",
-                    fontSize: "0.95rem",
+                    fontSize: "0.9rem",
                     fontWeight: "600",
                     color: "#0e1a13",
-                    padding: "0.75rem 1.25rem",
+                    padding: "0.6rem 1rem",
                     borderRadius: "12px",
                     transition: "all 0.3s ease",
                     display: "flex",
                     alignItems: "center",
-                    gap: "0.5rem",
-                    marginRight: "0.5rem",
+                    gap: "0.4rem",
+                    marginRight: "0.3rem",
                     background: "rgba(56, 224, 123, 0.1)",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   <FontAwesomeIcon
                     icon={faCog}
-                    style={{ fontSize: "0.9rem" }}
+                    style={{ fontSize: "0.85rem" }}
                   />
                   Admin
                 </Nav.Link>

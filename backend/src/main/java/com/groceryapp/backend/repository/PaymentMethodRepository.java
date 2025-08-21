@@ -14,7 +14,7 @@ public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, Lo
     
     Optional<PaymentMethod> findByUserIdAndIsDefaultTrueAndIsActiveTrue(Long userId);
     
-        Optional<PaymentMethod> findByJazzCashAccountId(String jazzCashAccountId);
+    Optional<PaymentMethod> findByStripePaymentMethodId(String stripePaymentMethodId);
 
-    boolean existsByUserIdAndJazzCashAccountId(Long userId, String jazzCashAccountId);
+    boolean existsByUserIdAndStripePaymentMethodId(Long userId, String stripePaymentMethodId);
 }

@@ -21,7 +21,7 @@ public class Category {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     @EqualsAndHashCode.Include
     private String name;
     private String description;

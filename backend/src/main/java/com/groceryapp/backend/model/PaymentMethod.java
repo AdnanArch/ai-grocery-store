@@ -1,5 +1,6 @@
 package com.groceryapp.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -25,6 +26,7 @@ public class PaymentMethod {
     
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"addresses", "orders", "roles"})
     @ToString.Exclude
     private User user;
     
@@ -37,8 +39,8 @@ public class PaymentMethod {
     @Column(nullable = false)
     private String brand; // VISA, MASTERCARD, etc.
     
-    @Column(nullable = false)
-    private String jazzCashAccountId; // JazzCash account ID
+    @Column(nullable = true)
+    private String stripePaymentMethodId; // Stripe payment method ID
     
     @Column(nullable = false)
     private Boolean isDefault = false;

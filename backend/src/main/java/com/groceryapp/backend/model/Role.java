@@ -1,7 +1,9 @@
 package com.groceryapp.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.Set;
 
 @Entity
 @Table(name = "roles")
@@ -22,5 +24,10 @@ public class Role {
     @EqualsAndHashCode.Include
     private String name;
     private String description;
+
+    @ManyToMany(mappedBy = "roles")
+    @JsonIgnore
+    @ToString.Exclude
+    private Set<User> users;
 }
 

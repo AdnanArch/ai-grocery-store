@@ -1,5 +1,6 @@
 package com.groceryapp.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
@@ -21,6 +22,7 @@ public class RecommendationLog {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"addresses", "orders", "roles"})
     @ToString.Exclude
     private User user;
 

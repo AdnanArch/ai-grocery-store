@@ -2,9 +2,11 @@ package com.groceryapp.backend.config;
 
 import com.groceryapp.backend.model.Category;
 import com.groceryapp.backend.model.Product;
+import com.groceryapp.backend.model.ProductImage;
 import com.groceryapp.backend.model.Role;
 import com.groceryapp.backend.model.User;
 import com.groceryapp.backend.repository.CategoryRepository;
+import com.groceryapp.backend.repository.ProductImageRepository;
 import com.groceryapp.backend.repository.ProductRepository;
 import com.groceryapp.backend.repository.RoleRepository;
 import com.groceryapp.backend.repository.UserRepository;
@@ -20,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -30,6 +33,7 @@ public class DataInitializer {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -46,10 +50,16 @@ public class DataInitializer {
             // Create hardcoded admin account
             createHardcodedAdmin();
 
-            // Create categories (needed for products)
-            createCategories();
+            // Clean up any duplicate categories
+            cleanupDuplicateCategories();
 
-            log.info("Basic data initialization complete! Categories created, products can be created manually via admin dashboard.");
+            // Create categories (needed for products)
+            List<Category> categories = createCategories();
+
+            // Note: Products are not created on startup as requested by user
+            // createProducts(categories);
+
+            log.info("Basic data initialization complete! Categories created successfully.");
         };
     }
 
@@ -107,6 +117,13 @@ public class DataInitializer {
     }
 
     private List<Category> createCategories() {
+        // Check if categories already exist
+        if (categoryRepository.count() > 0) {
+            log.info("Categories already exist, skipping category creation...");
+            return categoryRepository.findAll();
+        }
+
+        log.info("Creating categories...");
         List<Category> categories = new ArrayList<>();
 
         // Main categories
@@ -142,7 +159,31 @@ public class DataInitializer {
         categories.add(frozen);
         categories.add(pantry);
 
+        log.info("Categories created successfully");
         return categories;
+    }
+
+    private void cleanupDuplicateCategories() {
+        log.info("Checking for duplicate categories...");
+        List<Category> allCategories = categoryRepository.findAll();
+        
+        // Group categories by name
+        Map<String, List<Category>> categoriesByName = allCategories.stream()
+            .collect(java.util.stream.Collectors.groupingBy(Category::getName));
+        
+        // Remove duplicates, keeping the first one
+        categoriesByName.forEach((name, duplicates) -> {
+            if (duplicates.size() > 1) {
+                log.info("Found {} duplicate categories for name: {}", duplicates.size(), name);
+                // Keep the first one, delete the rest
+                for (int i = 1; i < duplicates.size(); i++) {
+                    categoryRepository.delete(duplicates.get(i));
+                    log.info("Deleted duplicate category: {}", duplicates.get(i).getId());
+                }
+            }
+        });
+        
+        log.info("Duplicate category cleanup completed");
     }
 
     private void createProducts(List<Category> categories) {
@@ -239,6 +280,23 @@ public class DataInitializer {
                 .updatedAt(now)
                 .build();
 
-        productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        
+        // Add a sample image URL for the product
+        String imageUrl = generateImageUrl(name);
+        ProductImage productImage = ProductImage.builder()
+                .product(savedProduct)
+                .url(imageUrl)
+                .altText(name)
+                .isPrimary(true)
+                .build();
+        
+        productImageRepository.save(productImage);
+    }
+    
+    private String generateImageUrl(String productName) {
+        // Generate a placeholder image URL based on the product name
+        String searchTerm = productName.toLowerCase().replace(" ", "+");
+        return "https://source.unsplash.com/400x400/?" + searchTerm + ",grocery";
     }
 }

@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 echo.
 echo ========================================
 echo   AI Grocery Store - Project Runner
@@ -43,12 +44,33 @@ if %errorlevel% equ 0 (
     taskkill /f /im python.exe >nul 2>&1
 )
 
-:: Stop any existing containers
-echo [INFO] Stopping any existing containers...
-docker-compose down --remove-orphans
+:: Check if containers exist and ask user about cleanup
+echo [INFO] Checking for existing containers...
+docker-compose ps --quiet >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] Found existing containers. Choose cleanup level:
+    echo 1. Standard cleanup (stop and remove containers)
+    echo 2. Full cleanup (stop, remove containers, and clean Docker system)
+    echo 3. Skip cleanup (keep existing containers)
+    echo.
+    set /p cleanup_choice="Enter your choice (1-3): "
+    
+    if "!cleanup_choice!"=="1" (
+        echo [INFO] Performing standard cleanup...
+        docker-compose down --remove-orphans
+    ) else if "!cleanup_choice!"=="2" (
+        echo [INFO] Performing full cleanup...
+        docker-compose down --remove-orphans --volumes
+        docker system prune -f
+    ) else (
+        echo [INFO] Skipping cleanup, keeping existing containers...
+    )
+) else (
+    echo [INFO] No existing containers found, proceeding with fresh build...
+)
 
 :: Build and start all services with optimization
-echo [INFO] Building and starting all services (optimized build)...
+echo [INFO] Building and starting all services...
 docker-compose up --build -d --no-deps
 
 :: Check if services started successfully
