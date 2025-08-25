@@ -3,9 +3,11 @@ package com.groceryapp.backend.controller;
 import com.groceryapp.backend.model.RefreshToken;
 import com.groceryapp.backend.model.Role;
 import com.groceryapp.backend.model.User;
+import com.groceryapp.backend.model.PasswordResetToken;
 import com.groceryapp.backend.repository.RefreshTokenRepository;
 import com.groceryapp.backend.repository.RoleRepository;
 import com.groceryapp.backend.repository.UserRepository;
+import com.groceryapp.backend.repository.PasswordResetTokenRepository;
 import com.groceryapp.backend.service.JwtUtil;
 import com.groceryapp.backend.service.OTPService;
 import com.groceryapp.backend.service.EmailService;
@@ -31,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -46,6 +49,7 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final OTPService otpService;
     private final EmailService emailService;
+    private final PasswordResetTokenRepository passwordResetTokenRepo;
 
     @GetMapping("/test")
     public ResponseEntity<?> test() {
@@ -464,8 +468,16 @@ public class AuthController {
             // Generate reset token
             String resetToken = UUID.randomUUID().toString();
             
-            // Store reset token (you might want to create a separate table for this)
-            // For now, we'll just log it
+            // Store reset token in database
+            Instant expiryDate = Instant.now().plus(24, ChronoUnit.HOURS);
+            PasswordResetToken passwordResetToken = PasswordResetToken.builder()
+                    .token(resetToken)
+                    .user(user)
+                    .expiryDate(expiryDate)
+                    .used(false)
+                    .build();
+            passwordResetTokenRepo.save(passwordResetToken);
+            
             log.info("Reset token generated for {}: {}", email, resetToken);
             
             // Send password reset email
@@ -495,9 +507,27 @@ public class AuthController {
         try {
             log.info("Validating reset token: {}", token);
             
-            // For now, we'll just return success since we're not storing tokens
-            // In a real implementation, you would validate the token against a database
-            // and check if it's expired
+            // Find the token in database
+            Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepo.findByToken(token);
+            
+            if (tokenOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("valid", false, "message", "Invalid reset token"));
+            }
+            
+            PasswordResetToken resetToken = tokenOpt.get();
+            
+            // Check if token is used
+            if (resetToken.getUsed()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("valid", false, "message", "Reset token has already been used"));
+            }
+            
+            // Check if token is expired
+            if (resetToken.getExpiryDate().isBefore(Instant.now())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("valid", false, "message", "Reset token has expired"));
+            }
             
             return ResponseEntity.ok(Map.of(
                     "valid", true,
@@ -533,15 +563,38 @@ public class AuthController {
                         .body(Map.of("message", "Password must be at least 6 characters"));
             }
             
-            // For now, we'll just return success since we're not storing tokens
-            // In a real implementation, you would:
-            // 1. Validate the token against a database
-            // 2. Check if it's expired
-            // 3. Find the user associated with the token
-            // 4. Update the user's password
-            // 5. Delete the used token
+            // Find the token in database
+            Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepo.findByToken(token);
             
-            log.info("Password reset successful for token: {}", token);
+            if (tokenOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Invalid reset token"));
+            }
+            
+            PasswordResetToken resetToken = tokenOpt.get();
+            
+            // Check if token is used
+            if (resetToken.getUsed()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Reset token has already been used"));
+            }
+            
+            // Check if token is expired
+            if (resetToken.getExpiryDate().isBefore(Instant.now())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Reset token has expired"));
+            }
+            
+            // Get the user and update password
+            User user = resetToken.getUser();
+            user.setHashedPassword(passwordEncoder.encode(newPassword));
+            userRepo.save(user);
+            
+            // Mark token as used
+            resetToken.setUsed(true);
+            passwordResetTokenRepo.save(resetToken);
+            
+            log.info("Password reset successful for user: {}", user.getEmail());
             
             return ResponseEntity.ok(Map.of(
                     "message", "Password reset successful"

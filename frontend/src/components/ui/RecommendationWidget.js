@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Card, Row, Col, Spinner, Alert, Badge } from "react-bootstrap";
+import { Card, Row, Col, Button, Badge, Alert, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faRobot,
   faShoppingCart,
+  faHeart,
+  faEye,
   faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import { CartContext } from "../../context/CartContext";
 import { AuthContext } from "../../context/AuthContext";
+import api from "../../utils/axios";
 
 const RecommendationWidget = ({
   title = "AI Recommendations",
@@ -65,7 +67,7 @@ const RecommendationWidget = ({
             endpoint = "/api/recommendations/trending";
         }
 
-        const response = await axios.get(endpoint, { params });
+        const response = await api.get(endpoint, { params });
         setRecommendations(response.data);
       } catch (err) {
         console.error("Error fetching recommendations:", err);

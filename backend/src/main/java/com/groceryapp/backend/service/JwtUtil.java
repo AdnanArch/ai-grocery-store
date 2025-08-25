@@ -68,13 +68,20 @@ public class JwtUtil {
             if (secretKey != null && !secretKey.trim().isEmpty()) {
                 byte[] keyBytes = Base64.getDecoder().decode(secretKey);
                 cachedKey = Keys.hmacShaKeyFor(keyBytes);
+                System.out.println("JWT key loaded successfully from configuration");
             } else {
-                // Fallback to generating a secure key if none is provided
-                cachedKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+                // Use a consistent fallback key instead of generating a random one
+                String fallbackKey = "ZmQ0ZGI5NjQ0MDQwNDIxNDJiZDY4MzJkNGZhNGM2ZmMyM2Y1YTg5ZGE0ODBjM2I4NzE5NzYxZjdjOWIyYzNhNDY=";
+                byte[] keyBytes = Base64.getDecoder().decode(fallbackKey);
+                cachedKey = Keys.hmacShaKeyFor(keyBytes);
+                System.out.println("Using fallback JWT key");
             }
         } catch (Exception e) {
-            // If the provided key is invalid or too short, generate a secure one
-            cachedKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+            // Use a consistent fallback key instead of generating a random one
+            String fallbackKey = "ZmQ0ZGI5NjQ0MDQwNDIxNDJiZDY4MzJkNGZhNGM2ZmMyM2Y1YTg5ZGE0ODBjM2I4NzE5NzYxZjdjOWIyYzNhNDY=";
+            byte[] keyBytes = Base64.getDecoder().decode(fallbackKey);
+            cachedKey = Keys.hmacShaKeyFor(keyBytes);
+            System.out.println("Using fallback JWT key due to error: " + e.getMessage());
         }
         
         return cachedKey;

@@ -2,6 +2,7 @@ package com.groceryapp.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -35,6 +36,12 @@ public class Order {
 
     @Column(nullable = false)
     private BigDecimal totalAmount;
+    
+    private BigDecimal subtotal;
+    private BigDecimal shippingCost;
+    private BigDecimal tax;
+    private BigDecimal discount;
+    
     @Column(nullable = false)
     private String status;
     private Instant createdAt;
@@ -43,6 +50,7 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @JsonIgnoreProperties("order")
     @ToString.Exclude
+    @JsonProperty("orderItems")
     private Set<OrderItem> items;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)

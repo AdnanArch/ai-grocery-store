@@ -8,6 +8,8 @@ import com.groceryapp.backend.repository.OrderRepository;
 import com.groceryapp.backend.repository.PaymentRepository;
 import com.groceryapp.backend.repository.PaymentMethodRepository;
 import com.groceryapp.backend.service.StripeService;
+import com.groceryapp.backend.service.EmailService;
+
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.SetupIntent;
 import com.stripe.model.Customer;
@@ -32,6 +34,8 @@ public class PaymentController {
     private final PaymentRepository paymentRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final StripeService stripeService;
+    private final EmailService emailService;
+
 
     // Create Stripe PaymentIntent
     @PostMapping("/create-payment-intent")
@@ -73,24 +77,42 @@ public class PaymentController {
         String status = request.get("status");
         String txnRefNumber = request.get("txnRefNumber");
         String responseCode = request.get("responseCode");
+        String paymentMethod = request.get("paymentMethod");
+
+        boolean paymentSuccess = false;
+        String transactionId = txnRefNumber;
 
         // Verify payment with Stripe
-        PaymentIntent paymentIntent = stripeService.getPaymentIntent(txnRefNumber);
+        try {
+            PaymentIntent paymentIntent = stripeService.getPaymentIntent(txnRefNumber);
+            paymentSuccess = "succeeded".equals(paymentIntent.getStatus());
+            transactionId = paymentIntent.getId();
+        } catch (Exception e) {
+            log.warn("Stripe payment verification failed: {}", e.getMessage());
+            paymentSuccess = false;
+        }
         
-        if ("succeeded".equals(paymentIntent.getStatus())) {
+        if (paymentSuccess) {
             order.setStatus("PAID");
 
             // Save payment record
             Payment payment = Payment.builder()
                     .order(order)
                     .amount(order.getTotalAmount())
-                    .method("STRIPE")
-                    .transactionId(paymentIntent.getId())
+                    .method(paymentMethod != null ? paymentMethod.toUpperCase() : "STRIPE")
+                    .transactionId(transactionId)
                     .status("COMPLETED")
                     .build();
 
             paymentRepository.save(payment);
             Order updatedOrder = orderRepository.save(order);
+
+            // Send payment confirmation email
+            try {
+                emailService.sendPaymentConfirmationEmail(updatedOrder, updatedOrder.getUser(), transactionId, payment.getMethod());
+            } catch (Exception e) {
+                log.warn("Failed to send payment confirmation email for order {}: {}", orderId, e.getMessage());
+            }
 
             return ResponseEntity.ok(updatedOrder);
         } else {
@@ -181,6 +203,8 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+
+
 
     // Create SetupIntent for saving payment methods
     @PostMapping("/setup-intent")
@@ -316,6 +340,14 @@ public class PaymentController {
                             .build();
                     
                     paymentRepository.save(payment);
+                    
+                    // Send payment confirmation email
+                    try {
+                        emailService.sendPaymentConfirmationEmail(order, order.getUser(), session.getPaymentIntent(), "STRIPE");
+                    } catch (Exception e) {
+                        log.warn("Failed to send payment confirmation email for order {}: {}", orderId, e.getMessage());
+                    }
+                    
                     log.info("Order {} marked as paid via webhook", orderId);
                 }
             } catch (Exception e) {

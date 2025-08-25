@@ -6,7 +6,6 @@ import {
   Card,
   Form,
   Button,
-  Alert,
   Spinner,
 } from "react-bootstrap";
 import { Link } from "react-router-dom";
@@ -88,14 +87,8 @@ const RequestResetPassword = () => {
                 </p>
               </div>
 
-              {error && (
-                <Alert variant="danger" className="mb-4">
-                  {error}
-                </Alert>
-              )}
-
               {success ? (
-                <Alert variant="success" className="mb-4">
+                <div className="text-center mb-4">
                   <p className="mb-0">
                     Password reset link has been sent to your email address!
                   </p>
@@ -103,7 +96,7 @@ const RequestResetPassword = () => {
                     Please check your inbox and follow the instructions to reset
                     your password.
                   </p>
-                </Alert>
+                </div>
               ) : (
                 <Form noValidate validated={validated} onSubmit={handleSubmit}>
                   <Form.Group className="mb-4" controlId="email">

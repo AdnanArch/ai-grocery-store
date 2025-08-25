@@ -39,4 +39,11 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     // Find a single product with category and images
     @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.images WHERE p.id = ?1")
     Optional<Product> findByIdWithCategoryAndImages(Long id);
+    
+    // Check if product exists by name (case-insensitive)
+    @Query("SELECT COUNT(p) > 0 FROM Product p WHERE LOWER(p.name) = LOWER(?1)")
+    boolean existsByNameIgnoreCase(String name);
+    
+    // Find product by name (case-insensitive) for duplicate checking
+    Optional<Product> findByNameIgnoreCase(String name);
 }

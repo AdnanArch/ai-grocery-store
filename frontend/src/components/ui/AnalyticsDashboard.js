@@ -416,13 +416,19 @@ const getStatusColor = (status) => {
   switch (status.toLowerCase()) {
     case "pending":
       return "warning";
+    case "paid":
+      return "success";
     case "processing":
       return "info";
     case "shipped":
       return "primary";
     case "delivered":
       return "success";
+    case "completed":
+      return "success";
     case "cancelled":
+      return "danger";
+    case "payment_failed":
       return "danger";
     default:
       return "secondary";

@@ -30,7 +30,7 @@ public class AIChat {
     @Column(nullable = false)
     private String title;
     
-    @Column(name = "last_message", length = 1000)
+    @Column(name = "last_message", columnDefinition = "TEXT")
     private String lastMessage;
     
     @Column(name = "created_at", nullable = false)

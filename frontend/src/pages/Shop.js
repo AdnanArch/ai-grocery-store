@@ -4,73 +4,76 @@ import {
   Row,
   Col,
   Card,
-  Form,
   Button,
+  Form,
+  InputGroup,
   Badge,
   Spinner,
   Alert,
-  InputGroup,
+  Pagination,
   Dropdown,
   Modal,
 } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFilter,
-  faSort,
-  faTimes,
-  faShoppingCart,
   faSearch,
-  faHeart,
+  faFilter,
+  faShoppingCart,
   faEye,
+  faHeart,
   faStar,
-  faChevronLeft,
-  faChevronRight,
-  faTh,
-  faList,
-  faSlidersH,
-  faTags,
+  faSort,
   faDollarSign,
   faClock,
-  faFire,
-  faCheckCircle,
-  faExclamationTriangle,
   faLeaf,
   faTruck,
   faShieldAlt,
+  faBox,
+  faTh,
+  faList,
+  faTimes,
+  faTags,
+  faExclamationTriangle,
+  faFire,
+  faCheckCircle,
+  faChevronLeft,
+  faChevronRight,
+  faSlidersH,
 } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as farHeart } from "@fortawesome/free-regular-svg-icons";
-import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
+import { WishlistContext } from "../context/WishlistContext";
+import api from "../utils/axios";
+import { toast } from "react-toastify";
 
 const Shop = () => {
+  const { user } = useContext(AuthContext);
+  const { addToCart } = useContext(CartContext);
+  const { isInWishlist, toggleWishlist } = useContext(WishlistContext);
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext);
 
-  // Parse query parameters
-  const queryParams = new URLSearchParams(location.search);
-
-  // State
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [wishlist, setWishlist] = useState(new Set());
   const [filters, setFilters] = useState({
-    page: parseInt(queryParams.get("page")) || 0,
-    size: parseInt(queryParams.get("size")) || 12,
-    sort: queryParams.get("sort") || "name",
-    direction: queryParams.get("direction") || "asc",
-    categoryId: queryParams.get("categoryId") || "",
-    search: queryParams.get("search") || "",
-    minPrice: queryParams.get("minPrice") || "",
-    maxPrice: queryParams.get("maxPrice") || "",
-    inStock: queryParams.get("inStock") === "true",
-    onSale: queryParams.get("onSale") === "true",
+    page: 0,
+    size: 12,
+    sort: "name",
+    direction: "asc",
+    categoryId: "",
+    search: "",
+    minPrice: "",
+    maxPrice: "",
+    inStock: false,
+    onSale: false,
   });
 
   // Memoized filtered products count
@@ -106,7 +109,7 @@ const Shop = () => {
           queryString += `&inStock=true`;
         }
 
-        const response = await axios.get(`/api/products${queryString}`);
+        const response = await api.get(`/api/products${queryString}`);
         setProducts(response.data.content);
         setTotalPages(response.data.totalPages);
         setTotalElements(response.data.totalElements);
@@ -124,7 +127,7 @@ const Shop = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("/api/categories");
+        const response = await api.get("/api/categories");
         // Remove duplicates based on id and name
         const uniqueCategories = response.data.filter(
           (category, index, self) =>
@@ -193,19 +196,6 @@ const Shop = () => {
       maxPrice: "",
       inStock: false,
       onSale: false,
-    });
-  };
-
-  // Toggle wishlist
-  const toggleWishlist = (productId) => {
-    setWishlist((prev) => {
-      const newWishlist = new Set(prev);
-      if (newWishlist.has(productId)) {
-        newWishlist.delete(productId);
-      } else {
-        newWishlist.add(productId);
-      }
-      return newWishlist;
     });
   };
 
@@ -310,66 +300,97 @@ const Shop = () => {
     <div className="shop-page">
       {/* Hero Section */}
       <div className="shop-hero">
+        <div className="hero-background">
+          <div className="hero-overlay"></div>
+        </div>
         <Container>
           <div className="hero-content text-center">
-            <h1 className="hero-title">Fresh & Organic</h1>
+            <div className="hero-badge mb-3">
+              <FontAwesomeIcon icon={faLeaf} className="me-2" />
+              Fresh & Organic Products
+            </div>
+            <h1 className="hero-title">
+              Discover Amazing
+              <span className="hero-title-highlight"> Products</span>
+            </h1>
             <p className="hero-subtitle">
-              Discover Fresh Products Delivered to You
+              From farm to table, we bring you the finest selection of fresh
+              groceries and household essentials
             </p>
             <p className="hero-description">
-              Explore our curated collection of premium groceries and household
-              essentials
+              Shop with confidence knowing every product is carefully selected
+              for quality and freshness
             </p>
 
             {/* Search Bar */}
             <div className="search-container">
-              <InputGroup className="search-input-group">
-                <InputGroup.Text className="search-icon">
-                  <FontAwesomeIcon icon={faSearch} />
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Search for products, categories, or brands..."
-                  className="search-input"
-                  name="search"
-                  value={filters.search}
-                  onChange={handleFilterChange}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      // Trigger search
+              <div className="search-wrapper">
+                <InputGroup className="search-input-group">
+                  <InputGroup.Text className="search-icon">
+                    <FontAwesomeIcon icon={faSearch} />
+                  </InputGroup.Text>
+                  <Form.Control
+                    type="text"
+                    placeholder="What are you looking for today?"
+                    className="search-input"
+                    name="search"
+                    value={filters.search}
+                    onChange={handleFilterChange}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setFilters((prev) => ({ ...prev, page: 0 }));
+                      }
+                    }}
+                    list="category-suggestions"
+                  />
+                  <datalist id="category-suggestions">
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.name} />
+                    ))}
+                  </datalist>
+                  <Button
+                    variant="primary"
+                    className="search-btn"
+                    onClick={() => {
                       setFilters((prev) => ({ ...prev, page: 0 }));
-                    }
-                  }}
-                  list="category-suggestions"
-                />
-                <datalist id="category-suggestions">
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.name} />
-                  ))}
-                </datalist>
-                <Button
-                  variant="primary"
-                  className="search-btn"
-                  onClick={() => {
-                    // Trigger search
-                    setFilters((prev) => ({ ...prev, page: 0 }));
-                  }}
-                >
-                  <FontAwesomeIcon icon={faSearch} />
-                </Button>
-              </InputGroup>
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faSearch} />
+                    Search
+                  </Button>
+                </InputGroup>
+              </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="quick-stats">
-              <div className="stat-item">
-                <span className="stat-number">{totalElements}</span>
-                <span className="stat-label">Products</span>
+            {/* Hero Stats */}
+            <div className="hero-stats">
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FontAwesomeIcon icon={faBox} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-number">{totalElements}</div>
+                  <div className="stat-label">Fresh Products</div>
+                </div>
               </div>
-              <div className="stat-item">
-                <span className="stat-number">{filteredCount}</span>
-                <span className="stat-label">Showing</span>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FontAwesomeIcon icon={faTruck} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-number">24h</div>
+                  <div className="stat-label">Fast Delivery</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <FontAwesomeIcon icon={faShieldAlt} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-number">100%</div>
+                  <div className="stat-label">Quality Guaranteed</div>
+                </div>
               </div>
             </div>
           </div>
@@ -656,22 +677,28 @@ const Shop = () => {
                     <Button
                       variant="light"
                       size="sm"
-                      className="action-btn"
-                      onClick={() => toggleWishlist(product.id)}
+                      className="action-btn wishlist-btn"
+                      onClick={() => toggleWishlist(product)}
+                      title={
+                        isInWishlist(product.id)
+                          ? "Remove from Wishlist"
+                          : "Add to Wishlist"
+                      }
                     >
                       <FontAwesomeIcon
-                        icon={wishlist.has(product.id) ? faHeart : farHeart}
+                        icon={isInWishlist(product.id) ? faHeart : farHeart}
                         className={
-                          wishlist.has(product.id) ? "text-danger" : ""
+                          isInWishlist(product.id) ? "text-danger" : ""
                         }
                       />
                     </Button>
                     <Button
                       variant="light"
                       size="sm"
-                      className="action-btn"
+                      className="action-btn view-btn"
                       as={Link}
                       to={`/products/${product.id}`}
+                      title="View Product Details"
                     >
                       <FontAwesomeIcon icon={faEye} />
                     </Button>
@@ -725,20 +752,12 @@ const Shop = () => {
                   <div className="product-actions-bottom">
                     <Button
                       variant="primary"
-                      className="add-to-cart-btn"
+                      className="add-to-cart-btn w-100"
                       onClick={() => addToCart(product)}
                       disabled={product.stock <= 0}
                     >
-                      <FontAwesomeIcon icon={faShoppingCart} />
+                      <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
                       {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      className="quick-view-btn"
-                      as={Link}
-                      to={`/products/${product.id}`}
-                    >
-                      <FontAwesomeIcon icon={faEye} />
                     </Button>
                   </div>
                 </Card.Body>

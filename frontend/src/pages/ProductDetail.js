@@ -6,7 +6,6 @@ import {
   Card,
   Button,
   Form,
-  Alert,
   Breadcrumb,
 } from "react-bootstrap";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -15,15 +14,19 @@ import {
   faShoppingCart,
   faArrowLeft,
   faCheck,
+  faHeart,
 } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as farHeart } from "@fortawesome/free-regular-svg-icons";
 import axios from "axios";
 import { CartContext } from "../context/CartContext";
+import { WishlistContext } from "../context/WishlistContext";
 import RecommendationWidget from "../components/ui/RecommendationWidget";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
+  const { addToWishlist } = useContext(WishlistContext);
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +57,7 @@ const ProductDetail = () => {
   // Handle quantity change
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
-    if (value > 0 && value <= (product?.stockQuantity || 1)) {
+    if (value > 0 && value <= (product?.stock || 1)) {
       setQuantity(value);
     }
   };
@@ -63,6 +66,13 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     if (product) {
       addToCart(product, quantity);
+    }
+  };
+
+  // Handle add to wishlist
+  const handleAddToWishlist = () => {
+    if (product) {
+      addToWishlist(product);
     }
   };
 
@@ -84,7 +94,6 @@ const ProductDetail = () => {
   if (error || !product) {
     return (
       <Container className="py-5">
-        <Alert variant="danger">{error || "Product not found"}</Alert>
         <Button variant="outline-primary" onClick={() => navigate("/shop")}>
           <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
           Back to Shop
@@ -175,7 +184,7 @@ const ProductDetail = () => {
                 {product.category?.name || "Uncategorized"}
               </span>
               <span className="h4 text-success">
-                ${product.price.toFixed(2)}
+                ₨{product.price.toLocaleString()}
               </span>
             </div>
 
@@ -184,10 +193,10 @@ const ProductDetail = () => {
             <div className="mb-4">
               <div className="d-flex align-items-center mb-2">
                 <span className="me-2">Availability:</span>
-                {product.stockQuantity > 0 ? (
+                {product.stock > 0 ? (
                   <span className="text-success">
                     <FontAwesomeIcon icon={faCheck} className="me-1" />
-                    In Stock ({product.stockQuantity} available)
+                    In Stock ({product.stock} available)
                   </span>
                 ) : (
                   <span className="text-danger">Out of Stock</span>
@@ -195,33 +204,55 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {product.stockQuantity > 0 ? (
+            {product.stock > 0 ? (
               <div className="d-flex flex-column flex-sm-row align-items-sm-center mb-4">
                 <Form.Group className="me-sm-3 mb-3 mb-sm-0 quantity-control">
                   <Form.Label>Quantity</Form.Label>
                   <Form.Control
                     type="number"
                     min="1"
-                    max={product.stockQuantity}
+                    max={product.stock}
                     value={quantity}
                     onChange={handleQuantityChange}
                   />
                 </Form.Group>
 
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="flex-grow-1"
-                  onClick={handleAddToCart}
-                >
-                  <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                  Add to Cart
-                </Button>
+                <div className="d-flex flex-column flex-sm-row gap-2 flex-grow-1">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="flex-grow-1"
+                    onClick={handleAddToCart}
+                  >
+                    <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
+                    Add to Cart
+                  </Button>
+
+                  <Button
+                    variant="outline-secondary"
+                    size="lg"
+                    onClick={handleAddToWishlist}
+                    title="Add to Wishlist"
+                  >
+                    <FontAwesomeIcon icon={farHeart} />
+                  </Button>
+                </div>
               </div>
             ) : (
-              <Button variant="secondary" size="lg" className="mb-4" disabled>
-                Out of Stock
-              </Button>
+              <div className="d-flex flex-column flex-sm-row gap-2 mb-4">
+                <Button variant="secondary" size="lg" disabled>
+                  Out of Stock
+                </Button>
+
+                <Button
+                  variant="outline-secondary"
+                  size="lg"
+                  onClick={handleAddToWishlist}
+                  title="Add to Wishlist"
+                >
+                  <FontAwesomeIcon icon={farHeart} />
+                </Button>
+              </div>
             )}
 
             {/* Product Metadata */}
@@ -232,24 +263,28 @@ const ProductDetail = () => {
                   <Col xs={4} className="text-muted">
                     SKU:
                   </Col>
-                  <Col xs={8}>{product.sku || "N/A"}</Col>
+                  <Col xs={8}>{product.id}</Col>
                 </Row>
                 <Row>
                   <Col xs={4} className="text-muted">
-                    Weight:
+                    Stock:
+                  </Col>
+                  <Col xs={8}>{product.stock} units</Col>
+                </Row>
+                <Row>
+                  <Col xs={4} className="text-muted">
+                    Category:
+                  </Col>
+                  <Col xs={8}>{product.category?.name || "Uncategorized"}</Col>
+                </Row>
+                <Row>
+                  <Col xs={4} className="text-muted">
+                    Added:
                   </Col>
                   <Col xs={8}>
-                    {product.weight
-                      ? `${product.weight} ${product.weightUnit || "kg"}`
+                    {product.createdAt
+                      ? new Date(product.createdAt).toLocaleDateString()
                       : "N/A"}
-                  </Col>
-                </Row>
-                <Row>
-                  <Col xs={4} className="text-muted">
-                    Dimensions:
-                  </Col>
-                  <Col xs={8}>
-                    {product.dimensions ? product.dimensions : "N/A"}
                   </Col>
                 </Row>
               </Card.Body>

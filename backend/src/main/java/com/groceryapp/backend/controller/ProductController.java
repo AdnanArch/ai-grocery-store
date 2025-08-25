@@ -45,6 +45,13 @@ public class ProductController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/featured")
+    public ResponseEntity<Page<Product>> getFeaturedProducts() {
+        Pageable pageable = PageRequest.of(0, 8, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Product> featuredProducts = productService.getAllProducts(pageable);
+        return ResponseEntity.ok(featuredProducts);
+    }
+
     @PostMapping
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
         Product savedProduct = productService.createProduct(product);

@@ -5,7 +5,6 @@ import {
   Col,
   Card,
   Button,
-  Alert,
   Spinner,
   Table,
 } from "react-bootstrap";
@@ -19,7 +18,8 @@ import {
   faMapMarkerAlt,
   faTruck,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
+import api from "../utils/axios";
+import { getOrderStatusBadge } from "../utils/statusUtils";
 
 const OrderConfirmation = () => {
   const { id } = useParams();
@@ -36,7 +36,9 @@ const OrderConfirmation = () => {
       setError("");
 
       try {
-        const response = await axios.get(`/api/orders/${id}`);
+        console.log("Fetching order details for ID:", id);
+        const response = await api.get(`/api/orders/${id}`);
+        console.log("Order response:", response.data);
         setOrder(response.data);
       } catch (error) {
         console.error("Error fetching order details:", error);
@@ -46,7 +48,9 @@ const OrderConfirmation = () => {
       }
     };
 
-    fetchOrderDetails();
+    if (id) {
+      fetchOrderDetails();
+    }
   }, [id]);
 
   // Format date
@@ -67,7 +71,6 @@ const OrderConfirmation = () => {
   if (error || !order) {
     return (
       <Container className="py-5">
-        <Alert variant="danger">{error || "Order not found"}</Alert>
         <Button
           variant="outline-primary"
           onClick={() => navigate("/account/orders")}
@@ -84,8 +87,8 @@ const OrderConfirmation = () => {
     order.subtotal ||
     order.orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = order.shippingCost || 0;
-  const tax = order.tax || 0;
-  const total = order.total || subtotal + shipping + tax;
+  // Tax is included in product prices
+  const total = order.totalAmount || order.total || subtotal + shipping;
 
   return (
     <div
@@ -147,11 +150,7 @@ const OrderConfirmation = () => {
                   <Col xs={4} className="text-muted">
                     Status:
                   </Col>
-                  <Col xs={8}>
-                    <span className="badge bg-success">
-                      {order.status || "Processing"}
-                    </span>
-                  </Col>
+                  <Col xs={8}>{getOrderStatusBadge(order.status)}</Col>
                 </Row>
 
                 <Row className="mb-3">
@@ -267,10 +266,10 @@ const OrderConfirmation = () => {
                           </div>
                         </div>
                       </td>
-                      <td>${item.price?.toFixed(2) || "0.00"}</td>
+                      <td>₨{item.price?.toFixed(2) || "0.00"}</td>
                       <td>{item.quantity}</td>
                       <td className="fw-bold">
-                        ${((item.price || 0) * item.quantity).toFixed(2)}
+                        ₨{((item.price || 0) * item.quantity).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -283,26 +282,21 @@ const OrderConfirmation = () => {
                 <Col md={6} className="ms-auto">
                   <div className="d-flex justify-content-between mb-2">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>₨{subtotal.toFixed(2)}</span>
                   </div>
 
                   <div className="d-flex justify-content-between mb-2">
                     <span>Shipping</span>
                     <span>
-                      {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+                      {shipping === 0 ? "Free" : `₨${shipping.toFixed(2)}`}
                     </span>
-                  </div>
-
-                  <div className="d-flex justify-content-between mb-2">
-                    <span>Tax</span>
-                    <span>${tax.toFixed(2)}</span>
                   </div>
 
                   <hr />
 
                   <div className="d-flex justify-content-between mb-0">
                     <span className="fw-bold">Total</span>
-                    <span className="fw-bold h5 mb-0">${total.toFixed(2)}</span>
+                    <span className="fw-bold h5 mb-0">₨{total.toFixed(2)}</span>
                   </div>
                 </Col>
               </Row>

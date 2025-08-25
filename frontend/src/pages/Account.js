@@ -6,8 +6,8 @@ import {
   Card,
   Form,
   Button,
-  Alert,
   Spinner,
+  Modal,
 } from "react-bootstrap";
 import { Link, Navigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -21,6 +21,8 @@ import {
   faCalendarAlt,
   faMapMarkerAlt,
   faShieldAlt,
+  faEye,
+  faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { AuthContext } from "../context/AuthContext";
@@ -227,17 +229,7 @@ const ProfileTab = ({ user, updateProfile }) => {
           </p>
         </div>
 
-        {error && (
-          <Alert variant="danger" className="mb-4">
-            {error}
-          </Alert>
-        )}
 
-        {success && (
-          <Alert variant="success" className="mb-4">
-            Your profile has been updated successfully.
-          </Alert>
-        )}
 
         <Form onSubmit={handleSubmit}>
           <Row>
@@ -358,33 +350,160 @@ const ProfileTab = ({ user, updateProfile }) => {
 
 // Security Tab Component
 const SecurityTab = () => {
-  return (
-    <Card className="login-card shadow-lg border-0">
-      <Card.Body className="p-4 p-md-5">
-        <div className="text-center mb-4">
-          <h2 className="login-title mb-2">Security Settings</h2>
-          <p className="login-subtitle">Manage your account security</p>
-        </div>
+  const { deleteAccount } = useContext(AuthContext);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
 
-        <div className="delete-account text-center">
-          <FontAwesomeIcon
-            icon={faShieldAlt}
-            size="2x"
-            className="text-muted mb-3"
-            style={{ color: "#38e07b" }}
-          />
-          <h4 className="mb-3">Delete Account</h4>
-          <p className="text-muted mb-4">
-            Once you delete your account, there is no going back. Please be
-            certain.
-          </p>
-          <Button variant="outline-danger">
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    if (!deletePassword.trim()) {
+      setDeleteError("Please enter your password to confirm deletion");
+      setDeleteLoading(false);
+      return;
+    }
+
+    const success = await deleteAccount(deletePassword);
+    if (success) {
+      setShowDeleteModal(false);
+      setDeletePassword("");
+    } else {
+      setDeleteError(
+        "Failed to delete account. Please check your password and try again."
+      );
+    }
+    setDeleteLoading(false);
+  };
+
+  return (
+    <>
+      <Card className="login-card shadow-lg border-0">
+        <Card.Body className="p-4 p-md-5">
+          <div className="text-center mb-4">
+            <h2 className="login-title mb-2">Security Settings</h2>
+            <p className="login-subtitle">Manage your account security</p>
+          </div>
+
+          <div className="delete-account text-center">
+            <FontAwesomeIcon
+              icon={faShieldAlt}
+              size="2x"
+              className="text-muted mb-3"
+              style={{ color: "#38e07b" }}
+            />
+            <h4 className="mb-3">Delete Account</h4>
+            <p className="text-muted mb-4">
+              Once you delete your account, there is no going back. Please be
+              certain.
+            </p>
+            <Button
+              variant="outline-danger"
+              onClick={() => setShowDeleteModal(true)}
+            >
+              <FontAwesomeIcon icon={faTrash} className="me-2" />
+              Delete My Account
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {/* Delete Account Modal */}
+      <Modal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="text-danger">
             <FontAwesomeIcon icon={faTrash} className="me-2" />
-            Delete My Account
+            Delete Account
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-center mb-4">
+            <div className="mb-3">
+              <FontAwesomeIcon
+                icon={faShieldAlt}
+                size="3x"
+                className="text-danger"
+              />
+            </div>
+            <h5 className="text-danger mb-3">Are you absolutely sure?</h5>
+            <p className="text-muted">
+              This action cannot be undone. This will permanently delete your
+              account and remove all your data from our servers.
+            </p>
+          </div>
+
+
+
+          <Form onSubmit={handleDeleteAccount}>
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-bold">
+                Enter your password to confirm
+              </Form.Label>
+              <div className="input-group-password">
+                <Form.Control
+                  type={showDeletePassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  required
+                  className="login-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowDeletePassword(!showDeletePassword)}
+                >
+                  <FontAwesomeIcon
+                    icon={showDeletePassword ? faEyeSlash : faEye}
+                    style={{ fontSize: "1rem" }}
+                  />
+                </button>
+              </div>
+              <Form.Text className="text-muted">
+                This is required to confirm the deletion of your account.
+              </Form.Text>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
           </Button>
-        </div>
-      </Card.Body>
-    </Card>
+          <Button
+            variant="danger"
+            onClick={handleDeleteAccount}
+            disabled={deleteLoading || !deletePassword.trim()}
+          >
+            {deleteLoading ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                  className="me-2"
+                />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faTrash} className="me-2" />
+                Delete Account
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 

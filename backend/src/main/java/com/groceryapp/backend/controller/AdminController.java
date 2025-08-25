@@ -1,49 +1,143 @@
 package com.groceryapp.backend.controller;
 
 import com.groceryapp.backend.model.*;
+import com.groceryapp.backend.model.Role;
 import com.groceryapp.backend.repository.*;
+import com.groceryapp.backend.repository.RoleRepository;
+import com.groceryapp.backend.service.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
+@Slf4j
 public class AdminController {
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private ProductRepository productRepository;
 
     @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
     private CategoryRepository categoryRepository;
 
     @Autowired
-    private OrderItemRepository orderItemRepository;
+    private OrderRepository orderRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private UserRepository userRepository;
+
+    @Autowired
+    private ProductImageRepository productImageRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Autowired
     private RoleRepository roleRepository;
 
     @Autowired
-    private ProductImageRepository productImageRepository;
+    private PasswordEncoder passwordEncoder;
+
+    // File upload directory
+    private static final String UPLOAD_DIR = "uploads/products/";
+
+    // File upload endpoint
+    @PostMapping("/upload-image")
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            // Validate file
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Please select a file to upload"));
+            }
+
+            // Check file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Only image files are allowed"));
+            }
+
+            // Check file size (max 5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                return ResponseEntity.badRequest().body(Map.of("message", "File size must be less than 5MB"));
+            }
+
+            // Validate file extension
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid filename"));
+            }
+
+            String fileExtension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+            if (!Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp").contains(fileExtension)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Unsupported file format. Please use JPG, PNG, GIF, or WebP"));
+            }
+
+            // Create upload directory if it doesn't exist
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Generate unique filename
+            String filename = "product_" + System.currentTimeMillis() + fileExtension;
+            Path filePath = uploadPath.resolve(filename);
+
+            // Check if file already exists (very unlikely but good practice)
+            int counter = 1;
+            while (Files.exists(filePath)) {
+                filename = "product_" + System.currentTimeMillis() + "_" + counter + fileExtension;
+                filePath = uploadPath.resolve(filename);
+                counter++;
+            }
+
+                        // Save file
+            Files.copy(file.getInputStream(), filePath);
+            
+            // Verify file was saved
+            if (Files.exists(filePath)) {
+                log.info("File saved successfully to disk: {} (size: {} bytes)", filePath.toAbsolutePath(), Files.size(filePath));
+            } else {
+                log.error("File was not saved to disk: {}", filePath.toAbsolutePath());
+            }
+            
+            // Return file URL (public endpoint)
+            String fileUrl = "/api/images/products/" + filename;
+            
+            log.info("File uploaded successfully: {} -> URL: {}", filename, fileUrl);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "File uploaded successfully",
+                "filename", filename,
+                "url", fileUrl,
+                "size", file.getSize()
+            ));
+
+        } catch (IOException e) {
+            log.error("Error uploading file", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Failed to upload file: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("Unexpected error during file upload", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "An unexpected error occurred during file upload"));
+        }
+    }
+
+
 
     // Dashboard Statistics
     @GetMapping("/stats")
@@ -54,17 +148,23 @@ public class AdminController {
         long totalProducts = productRepository.count();
         long totalOrders = orderRepository.count();
         
-        // Calculate total revenue from completed orders
-        BigDecimal totalRevenue = orderRepository.findAll().stream()
-                .filter(order -> "COMPLETED".equals(order.getStatus()))
+        // Calculate total revenue from all orders
+        List<Order> allOrders = orderRepository.findAll();
+        log.info("Found {} orders for revenue calculation", allOrders.size());
+        
+        BigDecimal totalRevenue = allOrders.stream()
+                .filter(order -> order.getTotalAmount() != null)
                 .map(Order::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        log.info("Total revenue calculated: {}", totalRevenue);
         
         stats.put("totalUsers", totalUsers);
         stats.put("totalProducts", totalProducts);
         stats.put("totalOrders", totalOrders);
         stats.put("totalRevenue", totalRevenue);
         
+        log.info("Final stats object: {}", stats);
         return ResponseEntity.ok(stats);
     }
 
@@ -74,6 +174,18 @@ public class AdminController {
         // Use a more efficient approach to load products with their related entities
         // This avoids the ConcurrentModificationException by using fetch joins
         List<Product> products = productRepository.findAllWithCategoryAndImages();
+        log.info("Loaded {} products", products.size());
+        for (Product product : products) {
+            log.info("Product: {} (ID: {}) has {} images", 
+                product.getName(), 
+                product.getId(), 
+                product.getImages() != null ? product.getImages().size() : 0);
+            if (product.getImages() != null && !product.getImages().isEmpty()) {
+                for (ProductImage image : product.getImages()) {
+                    log.info("  - Image: {} (URL: {})", image.getId(), image.getUrl());
+                }
+            }
+        }
         return ResponseEntity.ok(products);
     }
 
@@ -98,6 +210,11 @@ public class AdminController {
             }
             if (stockNumber == null || stockNumber.intValue() < 0) {
                 return ResponseEntity.badRequest().body(Map.of("message", "Product stock must be non-negative"));
+            }
+            
+            // Check for duplicate product name
+            if (productRepository.existsByNameIgnoreCase(name.trim())) {
+                return ResponseEntity.badRequest().body(Map.of("message", "A product with this name already exists"));
             }
 
             // Create product object
@@ -126,15 +243,18 @@ public class AdminController {
             
             // Handle image if provided
             if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                log.info("Creating product image with URL: {}", imageUrl);
                 ProductImage image = new ProductImage();
                 image.setProduct(savedProduct);
                 image.setUrl(imageUrl);
                 image.setAltText(imageAltText != null ? imageAltText : name);
                 image.setPrimary(true);
-                productImageRepository.save(image);
+                ProductImage savedImage = productImageRepository.save(image);
+                log.info("Product image saved with ID: {}", savedImage.getId());
                 
                 // Reload the product with images
                 savedProduct = productRepository.findByIdWithCategoryAndImages(savedProduct.getId()).orElse(savedProduct);
+                log.info("Product reloaded with {} images", savedProduct.getImages() != null ? savedProduct.getImages().size() : 0);
             }
             
             return ResponseEntity.ok(savedProduct);

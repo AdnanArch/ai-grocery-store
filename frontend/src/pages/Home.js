@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
-import { Container, Row, Col, Card, Button, Badge } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  Badge,
+  Spinner,
+} from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -17,60 +25,39 @@ import {
   faCheckCircle,
   faPlay,
   faQuoteLeft,
+  faFire,
 } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as farHeart } from "@fortawesome/free-regular-svg-icons";
+import { CartContext } from "../context/CartContext";
+import { WishlistContext } from "../context/WishlistContext";
+import { toast } from "react-toastify";
+import api from "../utils/axios";
 
 const Home = () => {
-  const [featuredProducts] = useState([
-    {
-      id: 1,
-      name: "Organic Fresh Vegetables Bundle",
-      price: 1299,
-      originalPrice: 1599,
-      image:
-        "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop",
-      category: "Vegetables",
-      rating: 4.8,
-      discount: 20,
-      stock: 45,
-    },
-    {
-      id: 2,
-      name: "Premium Dairy Products Pack",
-      price: 850,
-      originalPrice: 1000,
-      image:
-        "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=300&fit=crop",
-      category: "Dairy",
-      rating: 4.9,
-      discount: 15,
-      stock: 32,
-    },
-    {
-      id: 3,
-      name: "Fresh Artisan Bakery Collection",
-      price: 699,
-      originalPrice: 899,
-      image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop",
-      category: "Bakery",
-      rating: 4.7,
-      discount: 25,
-      stock: 28,
-    },
-    {
-      id: 4,
-      name: "Organic Fruits Premium Bundle",
-      price: 1899,
-      originalPrice: 2499,
-      image:
-        "https://images.unsplash.com/photo-1619566636858-adf3f41a0c0a?w=400&h=300&fit=crop",
-      category: "Fruits",
-      rating: 4.6,
-      discount: 24,
-      stock: 15,
-    },
-  ]);
+  const { addToCart } = useContext(CartContext);
+  const { isInWishlist, toggleWishlist } = useContext(WishlistContext);
+
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch featured products from API
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get("/api/products/featured");
+        setFeaturedProducts(response.data.content || []);
+      } catch (err) {
+        console.error("Error fetching featured products:", err);
+        setError("Failed to load featured products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
 
   const [categories] = useState([
     {
@@ -132,7 +119,7 @@ const Home = () => {
         "The quality of fresh produce is outstanding! I love how everything is delivered right to my doorstep.",
       rating: 5,
       avatar:
-        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face&auto=format",
     },
     {
       id: 2,
@@ -142,7 +129,7 @@ const Home = () => {
         "Best grocery delivery service I've used. Fast, reliable, and the products are always fresh.",
       rating: 5,
       avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face&auto=format",
     },
     {
       id: 3,
@@ -152,7 +139,7 @@ const Home = () => {
         "Perfect for my healthy lifestyle. The organic selection is amazing and prices are reasonable.",
       rating: 5,
       avatar:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face&auto=format",
     },
   ]);
 
@@ -250,7 +237,7 @@ const Home = () => {
               </p>
             </Col>
           </Row>
-          <Row>
+          <Row className="justify-content-center">
             <Col lg={3} md={6} className="mb-4">
               <div className="feature-card">
                 <div className="feature-icon">
@@ -346,114 +333,200 @@ const Home = () => {
               </p>
             </Col>
           </Row>
-          <Row>
-            {featuredProducts.map((product) => (
-              <Col lg={3} md={6} className="mb-4" key={product.id}>
-                <Card className="product-card h-100">
-                  <div className="product-image-container">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="product-image"
-                    />
-                    <div className="product-badges">
-                      {product.stock <= 10 && product.stock > 0 && (
-                        <Badge bg="warning" className="stock-badge">
-                          <FontAwesomeIcon icon={faClock} className="me-1" />
-                          Low Stock
-                        </Badge>
-                      )}
-                      {product.stock > 50 && (
-                        <Badge bg="success" className="stock-badge">
-                          <FontAwesomeIcon
-                            icon={faCheckCircle}
-                            className="me-1"
-                          />
-                          In Stock
-                        </Badge>
-                      )}
+
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="row">
+                {[...Array(4)].map((_, index) => (
+                  <Col lg={3} md={6} className="mb-4" key={index}>
+                    <div className="product-card-skeleton">
+                      <div className="skeleton-image"></div>
+                      <div className="skeleton-content">
+                        <div className="skeleton-title"></div>
+                        <div className="skeleton-text"></div>
+                        <div className="skeleton-price"></div>
+                        <div className="skeleton-button"></div>
+                      </div>
                     </div>
-                    <div className="product-actions">
-                      <Button variant="light" size="sm" className="action-btn">
-                        <FontAwesomeIcon icon={farHeart} />
-                      </Button>
-                      <Button
-                        variant="light"
-                        size="sm"
-                        className="action-btn"
-                        as={Link}
-                        to={`/products/${product.id}`}
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                      </Button>
-                    </div>
-                  </div>
-                  <Card.Body>
-                    <div className="product-info">
-                      <div className="product-category">{product.category}</div>
-                      <h6 className="product-title">{product.name}</h6>
-                      <div className="product-rating">
-                        <div className="rating-stars">
-                          {[...Array(5)].map((_, i) => (
+                  </Col>
+                ))}
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-5">
+              <div className="text-danger mb-3">
+                <FontAwesomeIcon icon={faFire} size="3x" />
+              </div>
+              <h4>Failed to load products</h4>
+              <p className="text-muted mb-4">{error}</p>
+              <Button
+                variant="primary"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-5">
+              <div className="text-muted mb-3">
+                <FontAwesomeIcon icon={faFire} size="3x" />
+              </div>
+              <h4>No featured products available</h4>
+              <p className="text-muted mb-4">
+                Check back later for our latest products
+              </p>
+              <Button variant="outline-primary" as={Link} to="/shop">
+                Browse All Products
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Row>
+                {featuredProducts.map((product) => (
+                  <Col lg={3} md={6} className="mb-4" key={product.id}>
+                    <Card className="product-card h-100">
+                      <div className="product-image-container">
+                        <img
+                          src={
+                            product.images && product.images.length > 0
+                              ? product.images[0].url
+                              : "/placeholder-product.jpg"
+                          }
+                          alt={product.name}
+                          className="product-image"
+                          onError={(e) => {
+                            e.target.src = "/placeholder-product.jpg";
+                          }}
+                          loading="lazy"
+                        />
+
+                        {/* Product Badges */}
+                        <div className="product-badges">
+                          {product.stock <= 10 && product.stock > 0 && (
+                            <Badge bg="warning" className="stock-badge">
+                              <FontAwesomeIcon icon={faFire} className="me-1" />
+                              Low Stock
+                            </Badge>
+                          )}
+                          {product.stock === 0 && (
+                            <Badge bg="danger" className="stock-badge">
+                              Out of Stock
+                            </Badge>
+                          )}
+                          {product.stock > 50 && (
+                            <Badge bg="success" className="stock-badge">
+                              <FontAwesomeIcon
+                                icon={faCheckCircle}
+                                className="me-1"
+                              />
+                              In Stock
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="product-actions">
+                          <Button
+                            variant="light"
+                            size="sm"
+                            className="action-btn wishlist-btn"
+                            onClick={() => toggleWishlist(product)}
+                            title={
+                              isInWishlist(product.id)
+                                ? "Remove from Wishlist"
+                                : "Add to Wishlist"
+                            }
+                          >
                             <FontAwesomeIcon
-                              key={i}
-                              icon={faStar}
+                              icon={
+                                isInWishlist(product.id) ? faHeart : farHeart
+                              }
                               className={
-                                i < Math.floor(product.rating)
-                                  ? "text-warning"
-                                  : "text-muted"
+                                isInWishlist(product.id) ? "text-danger" : ""
                               }
                             />
-                          ))}
+                          </Button>
+                          <Button
+                            variant="light"
+                            size="sm"
+                            className="action-btn view-btn"
+                            as={Link}
+                            to={`/products/${product.id}`}
+                            title="View Product Details"
+                          >
+                            <FontAwesomeIcon icon={faEye} />
+                          </Button>
                         </div>
-                        <span className="rating-text">
-                          {product.rating} (120)
-                        </span>
                       </div>
-                      <div className="product-price">
-                        <span className="current-price">
-                          ₨{product.price.toLocaleString()}
-                        </span>
-                        {product.originalPrice && (
-                          <>
-                            <span className="original-price">
-                              ₨{product.originalPrice.toLocaleString()}
+
+                      <Card.Body>
+                        <div className="product-info">
+                          <div className="product-category">
+                            {product.category?.name || "Uncategorized"}
+                          </div>
+                          <h6 className="product-title">{product.name}</h6>
+                          <p className="product-description">
+                            {product.description?.substring(0, 80)}...
+                          </p>
+
+                          <div className="product-rating">
+                            <div className="rating-stars">
+                              <FontAwesomeIcon icon={faStar} />
+                              <FontAwesomeIcon icon={faStar} />
+                              <FontAwesomeIcon icon={faStar} />
+                              <FontAwesomeIcon icon={faStar} />
+                              <FontAwesomeIcon icon={faStar} />
+                            </div>
+                            <span className="rating-text">4.5 (120)</span>
+                          </div>
+
+                          <div className="product-price">
+                            <span className="current-price">
+                              ₨{product.price?.toLocaleString()}
                             </span>
-                            <span className="discount-badge">
-                              {product.discount}% OFF
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="product-actions-bottom">
-                      <Button variant="primary" className="add-to-cart-btn">
-                        <FontAwesomeIcon icon={faShoppingCart} />
-                        Add to Cart
-                      </Button>
-                      <Button
-                        variant="outline-secondary"
-                        className="quick-view-btn"
-                        as={Link}
-                        to={`/products/${product.id}`}
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                        Quick View
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-          <Row className="text-center mt-4">
-            <Col>
-              <Button variant="outline-primary" size="lg" as={Link} to="/shop">
-                View All Products
-                <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
-              </Button>
-            </Col>
-          </Row>
+                          </div>
+                        </div>
+
+                        <div className="product-actions-bottom">
+                          <Button
+                            variant="primary"
+                            className="add-to-cart-btn w-100"
+                            onClick={() => {
+                              addToCart(product);
+                              toast.success(`${product.name} added to cart`);
+                            }}
+                            disabled={product.stock <= 0}
+                          >
+                            <FontAwesomeIcon
+                              icon={faShoppingCart}
+                              className="me-2"
+                            />
+                            {product.stock <= 0
+                              ? "Out of Stock"
+                              : "Add to Cart"}
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+
+              <Row className="text-center mt-4">
+                <Col>
+                  <Button
+                    variant="outline-primary"
+                    size="lg"
+                    as={Link}
+                    to="/shop"
+                  >
+                    View All Products
+                    <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                  </Button>
+                </Col>
+              </Row>
+            </>
+          )}
         </Container>
       </section>
 
@@ -474,7 +547,27 @@ const Home = () => {
                 <Card className="testimonial-card h-100">
                   <Card.Body className="text-center">
                     <div className="testimonial-avatar">
-                      <img src={testimonial.avatar} alt={testimonial.name} />
+                      <img
+                        src={testimonial.avatar}
+                        alt={testimonial.name}
+                        onError={(e) => {
+                          // Hide the broken image and show fallback
+                          e.target.style.display = "none";
+                          const fallback = e.target.nextElementSibling;
+                          if (fallback) fallback.style.display = "flex";
+                        }}
+                        loading="lazy"
+                      />
+                      {/* Fallback avatar with initials */}
+                      <div
+                        className="testimonial-avatar-fallback"
+                        style={{ display: "none" }}
+                      >
+                        {testimonial.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </div>
                     </div>
                     <div className="testimonial-rating mb-3">
                       {[...Array(5)].map((_, i) => (

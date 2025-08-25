@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -32,6 +33,7 @@ public class AIChatController {
     private final UserRepository userRepository;
 
     @PostMapping("/chat")
+    @Transactional
     public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, Object> request, Authentication authentication) {
         try {
             // Extract user email from authentication and fetch the actual user
@@ -40,13 +42,30 @@ public class AIChatController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
             String message = (String) request.get("message");
-            String chatId = (String) request.get("chatId");
+            
+            // Handle chatId as either String or Integer to prevent ClassCastException
+            Object chatIdObj = request.get("chatId");
+            String chatId = null;
+            if (chatIdObj != null) {
+                if (chatIdObj instanceof String) {
+                    chatId = (String) chatIdObj;
+                } else if (chatIdObj instanceof Integer) {
+                    chatId = String.valueOf(chatIdObj);
+                } else if (chatIdObj instanceof Long) {
+                    chatId = String.valueOf(chatIdObj);
+                }
+            }
 
             // Get or create chat session
             AIChat chat;
             if (chatId != null && !chatId.isEmpty()) {
-                Optional<AIChat> existingChat = aiChatRepository.findById(Long.valueOf(chatId));
-                chat = existingChat.orElseGet(() -> createNewChat(user));
+                try {
+                    Optional<AIChat> existingChat = aiChatRepository.findById(Long.valueOf(chatId));
+                    chat = existingChat.orElseGet(() -> createNewChat(user));
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid chatId format: {}, creating new chat", chatId);
+                    chat = createNewChat(user);
+                }
             } else {
                 chat = createNewChat(user);
             }
@@ -72,8 +91,10 @@ public class AIChatController {
                     .build();
             aiMessageRepository.save(aiMessage);
 
-            // Update chat
-            chat.setLastMessage(aiResponse);
+            // Update chat with truncated last message (for display purposes)
+            String truncatedMessage = aiResponse.length() > 200 ? 
+                aiResponse.substring(0, 200) + "..." : aiResponse;
+            chat.setLastMessage(truncatedMessage);
             chat.setUpdatedAt(LocalDateTime.now());
             aiChatRepository.save(chat);
 
@@ -134,6 +155,7 @@ public class AIChatController {
     }
 
     @DeleteMapping("/chat/{chatId}")
+    @Transactional
     public ResponseEntity<Map<String, Object>> deleteChat(@PathVariable Long chatId, Authentication authentication) {
         try {
             // Extract user email from authentication and fetch the actual user
@@ -157,11 +179,14 @@ public class AIChatController {
             }
         } catch (Exception e) {
             log.error("Error deleting chat: ", e);
-            return ResponseEntity.badRequest().build();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to delete chat");
+            return ResponseEntity.badRequest().body(error);
         }
     }
 
     @PostMapping("/chat/save")
+    @Transactional
     public ResponseEntity<Map<String, Object>> saveChat(@RequestBody Map<String, Object> request, Authentication authentication) {
         try {
             // Extract user email from authentication and fetch the actual user
@@ -169,25 +194,44 @@ public class AIChatController {
             User user = userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
-            String chatId = (String) request.get("chatId");
+            // Handle chatId as either String or Integer to prevent ClassCastException
+            Object chatIdObj = request.get("chatId");
+            String chatId = null;
+            if (chatIdObj != null) {
+                if (chatIdObj instanceof String) {
+                    chatId = (String) chatIdObj;
+                } else if (chatIdObj instanceof Integer) {
+                    chatId = String.valueOf(chatIdObj);
+                } else if (chatIdObj instanceof Long) {
+                    chatId = String.valueOf(chatIdObj);
+                }
+            }
+            
             String title = (String) request.get("title");
             
             if (chatId != null && !chatId.isEmpty()) {
-                Optional<AIChat> chat = aiChatRepository.findByIdAndUser(Long.valueOf(chatId), user);
-                if (chat.isPresent()) {
-                    chat.get().setTitle(title);
-                    aiChatRepository.save(chat.get());
-                    
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("message", "Chat saved successfully");
-                    return ResponseEntity.ok(response);
+                try {
+                    Optional<AIChat> chat = aiChatRepository.findByIdAndUser(Long.valueOf(chatId), user);
+                    if (chat.isPresent()) {
+                        chat.get().setTitle(title);
+                        aiChatRepository.save(chat.get());
+                        
+                        Map<String, Object> response = new HashMap<>();
+                        response.put("message", "Chat saved successfully");
+                        return ResponseEntity.ok(response);
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid chatId format: {}", chatId);
+                    return ResponseEntity.badRequest().body(Map.of("error", "Invalid chat ID format"));
                 }
             }
             
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             log.error("Error saving chat: ", e);
-            return ResponseEntity.badRequest().build();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to save chat");
+            return ResponseEntity.badRequest().body(error);
         }
     }
 

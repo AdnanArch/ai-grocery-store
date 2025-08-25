@@ -34,6 +34,9 @@ public class StripeService {
     
     @Value("${stripe.exchange-rate-pkr-to-usd:280}")
     private BigDecimal exchangeRatePkrToUsd;
+    
+    @Value("${stripe.force-pkr:false}")
+    private boolean forcePkr;
 
     public StripeService(@Value("${stripe.secret-key}") String stripeSecretKey) {
         Stripe.apiKey = stripeSecretKey;
@@ -44,9 +47,15 @@ public class StripeService {
      */
     public PaymentIntent createPaymentIntent(BigDecimal amount, String currency, String customerEmail, String description) {
         try {
+            // Force PKR if configured
+            String finalCurrency = currency != null ? currency : this.currency;
+            if (forcePkr) {
+                finalCurrency = "pkr";
+            }
+            
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(convertToStripeAmount(amount))
-                    .setCurrency(currency != null ? currency : this.currency)
+                    .setCurrency(finalCurrency)
                     .setDescription(description)
                     .setReceiptEmail(customerEmail)
                     .setAutomaticPaymentMethods(
@@ -261,11 +270,15 @@ public class StripeService {
      */
     public com.stripe.model.checkout.Session createCheckoutSession(Long orderId, BigDecimal amount, String currency, String customerEmail, String successUrl, String cancelUrl) {
         try {
-            // Check if PKR is supported, if not fallback to USD
+            // Force PKR usage if configured
             String finalCurrency = currency;
             BigDecimal finalAmount = amount;
             
-            if ("pkr".equalsIgnoreCase(currency) && enablePkr) {
+            if (forcePkr) {
+                log.info("Forcing PKR currency usage");
+                finalCurrency = "pkr";
+                finalAmount = amount;
+            } else if ("pkr".equalsIgnoreCase(currency) && enablePkr) {
                 try {
                     // Try to create a test session with PKR to check if supported
                     com.stripe.param.checkout.SessionCreateParams testParams = com.stripe.param.checkout.SessionCreateParams.builder()
@@ -293,20 +306,25 @@ public class StripeService {
                     
                     com.stripe.model.checkout.Session.create(testParams);
                     log.info("PKR currency is supported by Stripe account");
-                } catch (StripeException e) {
-                    if (e.getMessage().contains("currency") || e.getMessage().contains("pkr")) {
-                        log.warn("PKR currency not supported by Stripe account, falling back to {}", fallbackCurrency);
-                        finalCurrency = fallbackCurrency;
-                        // Convert PKR to fallback currency using configured exchange rate
-                        finalAmount = amount.divide(exchangeRatePkrToUsd, 2, BigDecimal.ROUND_HALF_UP);
-                    } else {
-                        throw e;
+                                    } catch (StripeException e) {
+                        if (e.getMessage().contains("currency") || e.getMessage().contains("pkr")) {
+                            log.error("PKR currency not supported by Stripe account. Please enable PKR in your Stripe dashboard: Settings → Business settings → Currencies → Add PKR");
+                            throw new RuntimeException("PKR currency is not enabled in your Stripe account. Please enable PKR in your Stripe dashboard settings to process payments in Pakistani Rupees.");
+                        } else {
+                            throw e;
+                        }
                     }
-                }
             } else if ("pkr".equalsIgnoreCase(currency) && !enablePkr) {
                 log.info("PKR disabled in configuration, using fallback currency: {}", fallbackCurrency);
                 finalCurrency = fallbackCurrency;
                 finalAmount = amount.divide(exchangeRatePkrToUsd, 2, BigDecimal.ROUND_HALF_UP);
+            }
+            
+            // Check if the converted amount is too small for Stripe (minimum 50 cents for USD)
+            if ("usd".equalsIgnoreCase(finalCurrency) && finalAmount.compareTo(BigDecimal.valueOf(0.50)) < 0) {
+                log.warn("Amount {} {} is too small for Stripe (minimum 50 cents), using PKR instead", finalAmount, finalCurrency);
+                finalCurrency = "pkr";
+                finalAmount = amount;
             }
             
             com.stripe.param.checkout.SessionCreateParams params = com.stripe.param.checkout.SessionCreateParams.builder()

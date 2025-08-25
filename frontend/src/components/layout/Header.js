@@ -25,11 +25,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { AuthContext } from "../../context/AuthContext";
 import { CartContext } from "../../context/CartContext";
+import { WishlistContext } from "../../context/WishlistContext";
 import RealTimeNotifications from "../ui/RealTimeNotifications";
 
 const Header = () => {
   const { isAuthenticated, user, logout, isAdmin } = useContext(AuthContext);
-  const { cartCount } = useContext(CartContext);
+  const { getCartCount } = useContext(CartContext);
+  const { getWishlistCount } = useContext(WishlistContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -185,8 +187,9 @@ const Header = () => {
                   icon={faHeart}
                   style={{ fontSize: "0.85rem" }}
                 />
-                Wishlist
+                Wishlist ({getWishlistCount()})
               </Nav.Link>
+              {/* AI Recs - Commented out for now
               <Nav.Link
                 as={NavLink}
                 to="/ai-recommendations"
@@ -212,6 +215,7 @@ const Header = () => {
                 />
                 AI Recs
               </Nav.Link>
+              */}
               <Nav.Link
                 as={NavLink}
                 to="/ai-chat"
@@ -271,7 +275,7 @@ const Header = () => {
               className="nav-actions"
               style={{ gap: "1rem", alignItems: "center" }}
             >
-              {/* Real-time Notifications */}
+              {/* Real-time Notifications - Commented out for now
               {isAuthenticated && (
                 <div
                   style={{
@@ -283,6 +287,7 @@ const Header = () => {
                   <RealTimeNotifications />
                 </div>
               )}
+              */}
 
               {/* Shopping Cart */}
               <Link
@@ -318,7 +323,7 @@ const Header = () => {
                     style={{ fontSize: "1rem" }}
                   />
                   <span>Cart</span>
-                  {cartCount > 0 && (
+                  {getCartCount() > 0 && (
                     <Badge
                       bg="danger"
                       className="cart-badge"
@@ -336,7 +341,7 @@ const Header = () => {
                         fontWeight: "600",
                       }}
                     >
-                      {cartCount}
+                      {getCartCount()}
                     </Badge>
                   )}
                 </Button>
@@ -438,15 +443,20 @@ const Header = () => {
                               alignItems: "center",
                               justifyContent: "center",
                               color: "white",
-                              fontWeight: "600",
-                              fontSize: "1.1rem",
+                              fontWeight: "700",
+                              fontSize: "1.2rem",
                               border: "3px solid #38e07b",
                               cursor: "pointer",
                               transition: "all 0.3s ease",
+                              textTransform: "uppercase",
                             }}
                           >
-                            {user?.name
-                              ? user.name.charAt(0).toUpperCase()
+                            {user?.firstName && user?.lastName
+                              ? `${user.firstName.charAt(
+                                  0
+                                )}${user.lastName.charAt(0)}`
+                              : user?.firstName
+                              ? user.firstName.charAt(0)
                               : "U"}
                           </div>
                         )}

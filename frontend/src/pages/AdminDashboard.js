@@ -34,7 +34,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { AuthContext } from "../context/AuthContext";
 import api from "../utils/axios";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  getOrderStatusBadge,
+  getOrderStatusBadgeColor,
+} from "../utils/statusUtils";
 
 const AdminDashboard = () => {
   const { user, isAdmin } = useContext(AuthContext);
@@ -91,10 +96,32 @@ const AdminDashboard = () => {
     }
   }, [isAdmin]);
 
+  // Debug stats state changes
+  useEffect(() => {
+    console.log("Stats state updated:", stats);
+  }, [stats]);
+
   const fetchStatsOnly = async () => {
     try {
       const statsResponse = await api.get("/api/admin/stats");
-      setStats(statsResponse.data);
+      console.log("Stats refresh response:", statsResponse.data);
+
+      // Validate stats data
+      if (statsResponse.data && typeof statsResponse.data === "object") {
+        const statsData = {
+          totalUsers: Number(statsResponse.data.totalUsers) || 0,
+          totalProducts: Number(statsResponse.data.totalProducts) || 0,
+          totalOrders: Number(statsResponse.data.totalOrders) || 0,
+          totalRevenue: Number(statsResponse.data.totalRevenue) || 0,
+        };
+        console.log("Processed stats refresh data:", statsData);
+        setStats(statsData);
+      } else {
+        console.error(
+          "Invalid stats refresh response format:",
+          statsResponse.data
+        );
+      }
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
@@ -105,7 +132,22 @@ const AdminDashboard = () => {
     try {
       // Fetch statistics
       const statsResponse = await api.get("/api/admin/stats");
-      setStats(statsResponse.data);
+      console.log("Stats response:", statsResponse.data);
+
+      // Validate stats data
+      if (statsResponse.data && typeof statsResponse.data === "object") {
+        const statsData = {
+          totalUsers: Number(statsResponse.data.totalUsers) || 0,
+          totalOrders: Number(statsResponse.data.totalOrders) || 0,
+          totalProducts: Number(statsResponse.data.totalProducts) || 0,
+          totalRevenue: Number(statsResponse.data.totalRevenue) || 0,
+        };
+        console.log("Processed stats data:", statsData);
+        setStats(statsData);
+      } else {
+        console.error("Invalid stats response format:", statsResponse.data);
+        toast.error("Invalid stats data received");
+      }
 
       // Fetch products
       const productsResponse = await api.get("/api/admin/products");
@@ -130,7 +172,7 @@ const AdminDashboard = () => {
     setRefreshing(true);
     await fetchDashboardData();
     setRefreshing(false);
-    toast.success("Dashboard refreshed successfully!");
+    toast.success("Dashboard refreshed successfully!", { autoClose: 4000 });
   };
 
   const handleProductSubmit = async (productData) => {
@@ -154,13 +196,13 @@ const AdminDashboard = () => {
           `/api/admin/products/${selectedProduct.id}`,
           formattedProductData
         );
-        toast.success("Product updated successfully");
+        toast.success("Product updated successfully", { autoClose: 4000 });
       } else {
         savedProduct = await api.post(
           "/api/admin/products",
           formattedProductData
         );
-        toast.success("Product created successfully");
+        toast.success("Product created successfully", { autoClose: 4000 });
       }
 
       setShowProductModal(false);
@@ -168,17 +210,19 @@ const AdminDashboard = () => {
       fetchDashboardData();
     } catch (error) {
       console.error("Product save error:", error);
-      toast.error(error.response?.data?.message || "Failed to save product");
+      toast.error(error.response?.data?.message || "Failed to save product", {
+        autoClose: 8000,
+      });
     }
   };
 
   const handleOrderStatusUpdate = async (orderId, status) => {
     try {
       await api.put(`/api/admin/orders/${orderId}/status`, { status });
-      toast.success("Order status updated");
+      toast.success("Order status updated", { autoClose: 4000 });
       fetchDashboardData();
     } catch (error) {
-      toast.error("Failed to update order status");
+      toast.error("Failed to update order status", { autoClose: 8000 });
     }
   };
 
@@ -268,10 +312,10 @@ const AdminDashboard = () => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
         await api.delete(`/api/admin/products/${productId}`);
-        toast.success("Product deleted successfully");
+        toast.success("Product deleted successfully", { autoClose: 4000 });
         fetchDashboardData();
       } catch (error) {
-        toast.error("Failed to delete product");
+        toast.error("Failed to delete product", { autoClose: 8000 });
       }
     }
   };
@@ -429,7 +473,11 @@ const AdminDashboard = () => {
                       className="fw-bold mb-2"
                       style={{ color: "#f59e0b", fontSize: "2.5rem" }}
                     >
-                      ₨{stats.totalRevenue?.toLocaleString() || 0}
+                      ₨{(stats.totalRevenue || 0).toLocaleString()}
+                      {/* Debug info */}
+                      <small style={{ fontSize: "0.5rem", display: "block" }}>
+                        Raw: {JSON.stringify(stats.totalRevenue)}
+                      </small>
                     </h2>
                     <p className="text-muted mb-0 fw-semibold">Total Revenue</p>
                   </Card.Body>
@@ -583,21 +631,7 @@ const AdminDashboard = () => {
                                 {order.user?.email}
                               </small>
                             </div>
-                            <Badge
-                              bg={
-                                order.status === "COMPLETED"
-                                  ? "success"
-                                  : order.status === "PROCESSING"
-                                  ? "warning"
-                                  : "secondary"
-                              }
-                              style={{
-                                borderRadius: "8px",
-                                padding: "8px 12px",
-                              }}
-                            >
-                              {order.status}
-                            </Badge>
+                            {getOrderStatusBadge(order.status)}
                           </div>
                         ))}
                         {orders.length === 0 && (
@@ -905,21 +939,7 @@ const AdminDashboard = () => {
                                 ₨{order.totalAmount?.toLocaleString()}
                               </td>
                               <td className="py-3">
-                                <Badge
-                                  bg={
-                                    order.status === "COMPLETED"
-                                      ? "success"
-                                      : order.status === "PROCESSING"
-                                      ? "warning"
-                                      : "secondary"
-                                  }
-                                  style={{
-                                    borderRadius: "8px",
-                                    padding: "8px 12px",
-                                  }}
-                                >
-                                  {order.status}
-                                </Badge>
+                                {getOrderStatusBadge(order.status)}
                               </td>
                               <td className="py-3">
                                 {new Date(order.createdAt).toLocaleDateString()}
@@ -1366,6 +1386,21 @@ const AdminDashboard = () => {
           </Form>
         </Modal.Body>
       </Modal>
+
+      {/* Toast Container for Notifications */}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        limit={3}
+        theme="colored"
+      />
     </div>
   );
 };
@@ -1381,6 +1416,7 @@ const ProductModal = ({ show, onHide, onSubmit, product }) => {
     imageUrl: "",
     imageAltText: "",
   });
+  const [imageUploading, setImageUploading] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -1418,6 +1454,54 @@ const ProductModal = ({ show, onHide, onSubmit, product }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
+
+    // Clear form if it's a new product (not editing)
+    if (!product) {
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+        stock: "",
+        categoryId: "",
+        imageUrl: "",
+        imageAltText: "",
+      });
+    }
+  };
+
+  const handleImageUpload = async (file) => {
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setImageUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await api.post("/api/admin/upload-image", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setFormData((prev) => ({ ...prev, imageUrl: response.data.url }));
+      toast.success("Image uploaded successfully!", { autoClose: 4000 });
+    } catch (error) {
+      console.error("Image upload error:", error);
+      toast.error(error.response?.data?.message || "Failed to upload image", {
+        autoClose: 8000,
+      });
+    } finally {
+      setImageUploading(false);
+    }
   };
 
   return (
@@ -1510,17 +1594,28 @@ const ProductModal = ({ show, onHide, onSubmit, product }) => {
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Image URL</Form.Label>
+                <Form.Label>Product Image</Form.Label>
                 <Form.Control
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={formData.imageUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, imageUrl: e.target.value })
-                  }
+                  type="file"
+                  accept="image/*"
+                  disabled={imageUploading}
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      // Handle file upload
+                      handleImageUpload(file);
+                    }
+                  }}
                 />
                 <Form.Text className="text-muted">
-                  Optional: URL for product image
+                  {imageUploading ? (
+                    <span className="text-primary">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      Uploading image...
+                    </span>
+                  ) : (
+                    "Upload a product image (JPG, PNG, GIF, WebP, max 5MB)"
+                  )}
                 </Form.Text>
               </Form.Group>
             </Col>
@@ -1570,6 +1665,21 @@ const ProductModal = ({ show, onHide, onSubmit, product }) => {
                       style={{ display: "none" }}
                     >
                       Image failed to load. Please check the URL.
+                    </div>
+                    <div className="mt-2">
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            imageUrl: "",
+                            imageAltText: "",
+                          });
+                        }}
+                      >
+                        Remove Image
+                      </Button>
                     </div>
                   </div>
                 </Form.Group>
@@ -1624,7 +1734,7 @@ const OrderModal = ({ show, onHide, order }) => {
               <strong>Order ID:</strong> #{order.id}
             </p>
             <p>
-              <strong>Status:</strong> {order.status}
+              <strong>Status:</strong> {getOrderStatusBadge(order.status)}
             </p>
             <p>
               <strong>Date:</strong>{" "}

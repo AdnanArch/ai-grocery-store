@@ -6,7 +6,6 @@ import {
   Card,
   Form,
   Button,
-  Alert,
   Spinner,
 } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -64,9 +63,9 @@ const Checkout = () => {
     orderSummary?.subtotal ||
     cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const shipping = orderSummary?.shipping || (subtotal > 5000 ? 0 : 299);
-  const tax = orderSummary?.tax || subtotal * 0.15;
+  // Tax is included in product prices
   const discount = orderSummary?.discount || 0;
-  const total = orderSummary?.total || subtotal + shipping + tax - discount;
+  const total = orderSummary?.total || subtotal + shipping - discount;
 
   // Redirect if not authenticated or cart is empty
   useEffect(() => {
@@ -128,7 +127,7 @@ const Checkout = () => {
         paymentMethod: "stripe",
         subtotal,
         shippingCost: shipping,
-        tax,
+        tax: 0, // Tax is included in product prices
         discount,
         total,
         couponCode: orderSummary?.couponCode || null,
@@ -154,13 +153,19 @@ const Checkout = () => {
       if (checkoutResponse.data.success && checkoutResponse.data.url) {
         // Check if currency was converted
         if (
-          checkoutResponse.data.originalCurrency === "pkr" &&
-          checkoutResponse.data.currency === "usd"
+          checkoutResponse.data.currency !==
+          checkoutResponse.data.originalCurrency
         ) {
           toast.info(
-            `Payment will be processed in USD (${checkoutResponse.data.convertedAmount}) instead of PKR (${checkoutResponse.data.originalAmount}) due to currency restrictions.`
+            `Amount converted from ${checkoutResponse.data.originalCurrency.toUpperCase()} ${
+              checkoutResponse.data.originalAmount
+            } to ${checkoutResponse.data.currency.toUpperCase()} ${
+              checkoutResponse.data.convertedAmount
+            }`
           );
         }
+
+        // Redirect to payment gateway
         window.location.href = checkoutResponse.data.url;
       } else {
         throw new Error("Failed to create checkout session");
@@ -169,18 +174,44 @@ const Checkout = () => {
       console.error("Error creating order:", error);
 
       // Handle specific error cases
-      if (error.response?.data?.message?.includes("insufficient stock")) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Unknown error occurred";
+
+      if (
+        errorMessage.toLowerCase().includes("insufficient stock") ||
+        errorMessage.toLowerCase().includes("stock") ||
+        errorMessage.toLowerCase().includes("quantity")
+      ) {
         setError(
           "Some items in your order have insufficient stock. Please return to cart and adjust quantities."
         );
-        toast.error(
-          "Some items have insufficient stock. Please check your cart."
+        toast.error(`Insufficient stock: ${errorMessage}`, { autoClose: 8000 });
+      } else if (errorMessage.toLowerCase().includes("product not found")) {
+        setError(
+          "One or more products in your cart are no longer available. Please return to cart and refresh."
         );
+        toast.error(
+          "Some products are no longer available. Please check your cart.",
+          { autoClose: 8000 }
+        );
+      } else if (
+        errorMessage.toLowerCase().includes("validation") ||
+        errorMessage.toLowerCase().includes("required")
+      ) {
+        setError("Please check your order details and try again.");
+        toast.error("Order validation failed. Please check your details.", {
+          autoClose: 8000,
+        });
       } else {
         setError(
           "There was a problem processing your order. Please try again."
         );
-        toast.error("Error creating order. Please try again.");
+        toast.error(`Order creation failed: ${errorMessage}`, {
+          autoClose: 8000,
+        });
       }
     } finally {
       setLoading(false);
@@ -209,10 +240,22 @@ const Checkout = () => {
           </p>
         </div>
 
+        {/* Error Display */}
         {error && (
-          <Alert variant="danger" className="mb-4">
-            {error}
-          </Alert>
+          <div className="alert alert-danger mb-4" role="alert">
+            <div className="d-flex align-items-start">
+              <i className="fas fa-exclamation-triangle me-2 mt-1"></i>
+              <div>
+                <strong>Order Error:</strong>
+                <br />
+                {error}
+                <br />
+                <small className="text-muted">
+                  Please check your cart and try again.
+                </small>
+              </div>
+            </div>
+          </div>
         )}
 
         <Form noValidate validated={validated} onSubmit={handleSubmit}>
@@ -585,16 +628,6 @@ const Checkout = () => {
                         ) : (
                           `₨${shipping.toLocaleString()}`
                         )}
-                      </span>
-                    </div>
-
-                    <div className="summary-item">
-                      <div className="d-flex align-items-center">
-                        <FontAwesomeIcon icon={faPercent} className="me-2" />
-                        <span className="summary-label">Tax (15%)</span>
-                      </div>
-                      <span className="summary-value">
-                        ₨{tax.toLocaleString()}
                       </span>
                     </div>
 

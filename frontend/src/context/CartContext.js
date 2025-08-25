@@ -82,11 +82,15 @@ export const CartProvider = ({ children }) => {
           quantity: updatedItems[existingItemIndex].quantity + quantity,
         };
 
-        toast.success(`Updated ${product.name} quantity in your cart`);
+        toast.success(`Updated ${product.name} quantity in your cart`, {
+          autoClose: 4000,
+        });
         return updatedItems;
       } else {
         // Item doesn't exist, add new item
-        toast.success(`${product.name} added to your cart`);
+        toast.success(`${product.name} added to your cart`, {
+          autoClose: 4000,
+        });
         return [...prevItems, { ...product, quantity }];
       }
     });
@@ -111,7 +115,9 @@ export const CartProvider = ({ children }) => {
     setCartItems((prevItems) => {
       const itemToRemove = prevItems.find((item) => item.id === productId);
       if (itemToRemove) {
-        toast.info(`${itemToRemove.name} removed from your cart`);
+        toast.info(`${itemToRemove.name} removed from your cart`, {
+          autoClose: 4000,
+        });
       }
       return prevItems.filter((item) => item.id !== productId);
     });
@@ -119,9 +125,16 @@ export const CartProvider = ({ children }) => {
 
   // Clear cart
   const clearCart = () => {
-    setCartItems([]);
-    setCoupon(null);
-    toast.info("Your cart has been cleared");
+    // Only show toast if there are actually items to clear
+    if (cartItems.length > 0) {
+      setCartItems([]);
+      setCoupon(null);
+      toast.info("Your cart has been cleared");
+    } else {
+      // Just clear the state without showing toast
+      setCartItems([]);
+      setCoupon(null);
+    }
   };
 
   // Apply coupon
@@ -178,17 +191,15 @@ export const CartProvider = ({ children }) => {
       discount = (subtotal * coupon.discountValue) / 100;
     }
 
-    // Calculate tax (8%)
-    const tax = (subtotal - discount) * 0.08;
-
+    // Tax is included in product prices, no need to calculate separately
     // Calculate total
-    const total = subtotal - discount + shipping + tax;
+    const total = subtotal - discount + shipping;
 
     return {
       subtotal,
       shipping,
       discount,
-      tax,
+      tax: 0, // Tax is included in product prices
       total,
     };
   };

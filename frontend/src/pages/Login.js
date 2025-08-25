@@ -10,6 +10,8 @@ import {
 } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Login = () => {
   const {
@@ -37,7 +39,14 @@ const Login = () => {
 
   // Only redirect if already authenticated when component mounts
   useEffect(() => {
-    if (isAuthenticated && !loading && !formData.email && !formData.password) {
+    // Only redirect if user is already authenticated and we're not in the middle of a login attempt
+    if (
+      isAuthenticated &&
+      !loading &&
+      !formData.email &&
+      !formData.password &&
+      !validated
+    ) {
       // Add a small delay to ensure any error messages are displayed
       setTimeout(() => {
         navigate(from);
@@ -50,6 +59,7 @@ const Login = () => {
     loading,
     formData.email,
     formData.password,
+    validated,
   ]);
 
   // Handle input change
@@ -85,6 +95,11 @@ const Login = () => {
           navigate(from);
         }
       }, 1500); // 1.5 second delay
+    } else {
+      // Add a delay to prevent page reload and allow error toast to be visible
+      setTimeout(() => {
+        // Keep user on login page to see error message
+      }, 3000); // 3 second delay for error cases
     }
     // Don't reset the form on error - let the user see the error message
     // and keep their input for correction
@@ -157,19 +172,18 @@ const Login = () => {
                     Please provide your password (min 6 characters).
                   </Form.Control.Feedback>
                 </Form.Group>
-                <div className="text-end mb-3">
+
+                {/* Forgot Password Link */}
+                <div className="d-flex justify-content-end mb-3">
                   <Link
                     to="/forgot-password"
                     className="text-decoration-none"
-                    style={{
-                      color: "#38e07b",
-                      fontSize: "0.9rem",
-                      fontWeight: "500",
-                    }}
+                    style={{ color: "#38e07b", fontSize: "0.9rem" }}
                   >
                     Forgot Password?
                   </Link>
                 </div>
+
                 <div className="d-flex align-items-center mb-4">
                   <Form.Check
                     type="switch"
@@ -189,6 +203,7 @@ const Login = () => {
                 >
                   {loading || authLoading ? "Loading..." : "Continue"}
                 </Button>
+
                 <div
                   className="text-center mt-2"
                   style={{ fontSize: 13, color: "#38e07b" }}
@@ -228,6 +243,19 @@ const Login = () => {
           </Col>
         </Row>
       </Container>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        limit={3}
+        theme="colored"
+      />
     </div>
   );
 };

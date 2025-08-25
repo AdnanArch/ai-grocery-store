@@ -35,23 +35,42 @@ const Cart = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // Calculate order summary values
-  const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
-  const shipping = subtotal > 5000 ? 0 : 299; // Free shipping over Rs. 5000
-  const tax = subtotal * 0.04; // 4% tax
-  const total = subtotal + shipping + tax;
+  // Calculate totals
+  const subtotal = cartItems.reduce((total, item) => {
+    return total + item.price * item.quantity;
+  }, 0);
+  const shipping = subtotal >= 5000 ? 0 : 299;
+  const total = subtotal + shipping;
 
   // Handle quantity change
   const handleQuantityChange = (productId, quantity) => {
     if (quantity < 1) return;
+
+    // Find the item to check stock
+    const item = cartItems.find((cartItem) => cartItem.id === productId);
+    if (item && item.stockQuantity && quantity > item.stockQuantity) {
+      toast.warning(`Only ${item.stockQuantity} available for ${item.name}`, {
+        autoClose: 5000,
+      });
+      return;
+    }
+
     updateQuantity(productId, quantity);
   };
 
   // Handle quantity increment/decrement
   const handleQuantityIncrement = (productId, currentQuantity) => {
+    const item = cartItems.find((cartItem) => cartItem.id === productId);
+    if (
+      item &&
+      item.stockQuantity &&
+      currentQuantity + 1 > item.stockQuantity
+    ) {
+      toast.warning(`Only ${item.stockQuantity} available for ${item.name}`, {
+        autoClose: 5000,
+      });
+      return;
+    }
     updateQuantity(productId, currentQuantity + 1);
   };
 
@@ -73,6 +92,20 @@ const Cart = () => {
       return;
     }
 
+    // Check for stock issues before checkout
+    const stockIssues = cartItems.filter(
+      (item) => item.stockQuantity && item.quantity > item.stockQuantity
+    );
+
+    if (stockIssues.length > 0) {
+      const productNames = stockIssues.map((item) => item.name).join(", ");
+      toast.error(
+        `Insufficient stock for: ${productNames}. Please adjust quantities.`,
+        { autoClose: 8000 }
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       // Navigate to checkout with order summary data
@@ -81,7 +114,6 @@ const Cart = () => {
           orderSummary: {
             subtotal,
             shipping,
-            tax,
             total,
           },
         },
@@ -253,10 +285,42 @@ const Cart = () => {
                                     item.quantity
                                   )
                                 }
+                                disabled={
+                                  item.quantity >= (item.stockQuantity || 99)
+                                }
                               >
                                 <FontAwesomeIcon icon={faPlus} />
                               </Button>
                             </div>
+
+                            {/* Stock Warning */}
+                            {item.stockQuantity &&
+                              item.quantity > item.stockQuantity && (
+                                <div
+                                  className="alert alert-warning mt-2 py-1"
+                                  style={{ fontSize: "0.8rem" }}
+                                >
+                                  <small>
+                                    <i className="fas fa-exclamation-triangle me-1"></i>
+                                    Only {item.stockQuantity} available
+                                  </small>
+                                </div>
+                              )}
+
+                            {/* Low Stock Warning */}
+                            {item.stockQuantity &&
+                              item.stockQuantity <= 5 &&
+                              item.stockQuantity > 0 && (
+                                <div
+                                  className="alert alert-info mt-2 py-1"
+                                  style={{ fontSize: "0.8rem" }}
+                                >
+                                  <small>
+                                    <i className="fas fa-fire me-1"></i>
+                                    Low stock: {item.stockQuantity} remaining
+                                  </small>
+                                </div>
+                              )}
                           </Col>
                           <Col md={2} className="text-end">
                             <div className="mb-2">
@@ -334,16 +398,6 @@ const Cart = () => {
                       </span>
                     </div>
 
-                    <div className="summary-item">
-                      <div className="d-flex align-items-center">
-                        <FontAwesomeIcon icon={faPercent} className="me-2" />
-                        <span className="summary-label">Tax (4%)</span>
-                      </div>
-                      <span className="summary-value">
-                        ₨{tax.toLocaleString()}
-                      </span>
-                    </div>
-
                     <hr />
 
                     <div className="summary-item">
@@ -386,6 +440,22 @@ const Cart = () => {
                         </>
                       )}
                     </Button>
+
+                    {/* Stock Issues Warning */}
+                    {cartItems.some(
+                      (item) =>
+                        item.stockQuantity && item.quantity > item.stockQuantity
+                    ) && (
+                      <div
+                        className="alert alert-warning mt-3 py-2"
+                        style={{ fontSize: "0.9rem" }}
+                      >
+                        <i className="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Stock Issues Detected:</strong> Some items have
+                        insufficient stock. Please adjust quantities before
+                        checkout.
+                      </div>
+                    )}
 
                     <div className="text-center">
                       <small className="text-muted d-block">

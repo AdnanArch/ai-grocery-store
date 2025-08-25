@@ -37,6 +37,7 @@ import AIChat from "./pages/AIChat";
 // Context
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
+import { WishlistProvider } from "./context/WishlistContext";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -83,133 +84,153 @@ const AdminRoute = ({ children }) => {
 };
 
 function App() {
+  const location = useLocation();
+
+  // Check if current route is AI chat page
+  const isAIChatPage = location.pathname === "/ai-chat";
+
   return (
     <ErrorBoundary>
       <AuthProvider>
         <CartProvider>
-          <div className="app-container d-flex flex-column min-vh-100">
-            <Header />
-            <main className="flex-grow-1">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/products/:id" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route
-                  path="/checkout"
-                  element={
-                    <ProtectedRoute>
-                      <Checkout />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/order-confirmation/:id"
-                  element={
-                    <ProtectedRoute>
-                      <OrderConfirmation />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/otp-verification" element={<OTPVerification />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route
-                  path="/reset-password"
-                  element={<RequestResetPassword />}
-                />
-                <Route
-                  path="/reset-password/:token"
-                  element={<ResetPassword />}
-                />
-                <Route
-                  path="/account/*"
-                  element={
-                    <ProtectedRoute>
-                      <Account />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/orders"
-                  element={
-                    <ProtectedRoute>
-                      <Orders />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin"
-                  element={
-                    <AdminRoute>
-                      <AdminDashboard />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/wishlist"
-                  element={
-                    <ProtectedRoute>
-                      <Wishlist />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/products/:productId/reviews"
-                  element={<ProductReviews />}
-                />
-                <Route
-                  path="/payment"
-                  element={
-                    <ProtectedRoute>
-                      <Payment />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
-                <Route
-                  path="/ai-recommendations"
-                  element={
-                    <ProtectedRoute>
-                      <AIRecommendations />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/ai-chat"
-                  element={
-                    <ProtectedRoute>
-                      <AIChat />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            <Footer />
-            <ToastContainer
-              position="bottom-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              limit={1}
-              theme="colored"
-            />
-          </div>
+          <WishlistProvider>
+            <div className="app-container d-flex flex-column min-vh-100">
+              <Header />
+              <main className="flex-grow-1">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/products/:id" element={<ProductDetail />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route
+                    path="/checkout"
+                    element={
+                      <ProtectedRoute>
+                        <Checkout />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/order-confirmation/:id"
+                    element={
+                      <ProtectedRoute>
+                        <OrderConfirmation />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route
+                    path="/otp-verification"
+                    element={<OTPVerification />}
+                  />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route
+                    path="/reset-password"
+                    element={<RequestResetPassword />}
+                  />
+                  <Route
+                    path="/reset-password/:token"
+                    element={<ResetPassword />}
+                  />
+                  <Route
+                    path="/account/*"
+                    element={
+                      <ProtectedRoute>
+                        <Account />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/orders"
+                    element={
+                      <ProtectedRoute>
+                        <Orders />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin"
+                    element={
+                      <AdminRoute>
+                        <AdminDashboard />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/wishlist"
+                    element={
+                      <ProtectedRoute>
+                        <Wishlist />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/products/:productId/reviews"
+                    element={<ProductReviews />}
+                  />
+                  <Route
+                    path="/payment"
+                    element={
+                      <ProtectedRoute>
+                        <Payment />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/payment-success" element={<PaymentSuccess />} />
+                  <Route
+                    path="/order-confirmation/:id"
+                    element={
+                      <ProtectedRoute>
+                        <OrderConfirmation />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-recommendations"
+                    element={
+                      <ProtectedRoute>
+                        <AIRecommendations />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/ai-chat"
+                    element={
+                      <ProtectedRoute>
+                        <AIChat />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              {!isAIChatPage && <Footer />}
+              <ToastContainer
+                position="bottom-right"
+                autoClose={15000} // Increased from 5000 to 15000ms (15 seconds)
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                limit={1}
+                theme="colored"
+                style={{ zIndex: 9999 }}
+                toastStyle={{ zIndex: 9999 }}
+              />
+            </div>
+          </WishlistProvider>
         </CartProvider>
       </AuthProvider>
     </ErrorBoundary>

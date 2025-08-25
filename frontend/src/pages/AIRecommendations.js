@@ -6,7 +6,6 @@ import {
   Card,
   Button,
   Badge,
-  Alert,
   Spinner,
   Tabs,
   Tab,
@@ -99,12 +98,7 @@ const AIRecommendations = () => {
 
   if (!user) {
     return (
-      <Container className="d-flex justify-content-center align-items-center min-vh-100">
-        <Alert variant="info">
-          Please <Link to="/login">login</Link> to view personalized
-          recommendations.
-        </Alert>
-      </Container>
+      <Container className="d-flex justify-content-center align-items-center min-vh-100"></Container>
     );
   }
 

@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Button,
-  Spinner,
-  Alert,
-} from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Spinner } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -42,10 +34,7 @@ const PaymentSuccess = () => {
           return;
         }
 
-        // Clear the cart since payment was successful
-        clearCart();
-
-        // Update order status to PAID
+        // Update order status to PAID first
         await api.put(`/api/orders/${orderId}/status`, {
           status: "PAID",
         });
@@ -53,6 +42,9 @@ const PaymentSuccess = () => {
         // Fetch order details
         const response = await api.get(`/api/orders/${orderId}`);
         setOrder(response.data);
+
+        // Only clear cart after successful order confirmation
+        clearCart();
 
         toast.success("Payment successful! Your order has been confirmed.");
       } catch (error) {
@@ -66,8 +58,11 @@ const PaymentSuccess = () => {
       }
     };
 
-    handlePaymentSuccess();
-  }, [orderId, sessionId, clearCart]);
+    // Only run once when component mounts
+    if (orderId && !order) {
+      handlePaymentSuccess();
+    }
+  }, [orderId]); // Remove clearCart and sessionId from dependencies
 
   const handleContinueShopping = () => {
     navigate("/shop");
@@ -114,13 +109,13 @@ const PaymentSuccess = () => {
         <Container className="flex-grow-1 py-5">
           <Row className="justify-content-center">
             <Col lg={6}>
-              <Alert variant="danger" className="text-center">
+              <div className="text-center">
                 <h4>Payment Error</h4>
                 <p>{error}</p>
                 <Button variant="outline-danger" onClick={handleGoHome}>
                   Go Home
                 </Button>
-              </Alert>
+              </div>
             </Col>
           </Row>
         </Container>
@@ -180,7 +175,7 @@ const PaymentSuccess = () => {
                       <div className="mb-3">
                         <strong>Total Amount:</strong>{" "}
                         <span className="text-success fw-bold">
-                          ${order.totalAmount}
+                          ₨{order.totalAmount}
                         </span>
                       </div>
                       <div className="mb-3">

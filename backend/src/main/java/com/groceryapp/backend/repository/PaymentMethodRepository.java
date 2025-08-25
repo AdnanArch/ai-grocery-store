@@ -17,4 +17,6 @@ public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, Lo
     Optional<PaymentMethod> findByStripePaymentMethodId(String stripePaymentMethodId);
 
     boolean existsByUserIdAndStripePaymentMethodId(Long userId, String stripePaymentMethodId);
+    
+    void deleteByUserId(Long userId);
 }

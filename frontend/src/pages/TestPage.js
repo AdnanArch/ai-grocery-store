@@ -4,7 +4,6 @@ import {
   Container,
   Form,
   Button,
-  Alert,
   Card,
   Row,
   Col,
@@ -70,8 +69,7 @@ const TestPage = () => {
           Authentication Test Page
         </h2>
 
-      {message && <Alert variant="success">{message}</Alert>}
-      {error && <Alert variant="danger">{error}</Alert>}
+      
 
       <Row>
         <Col md={4}>

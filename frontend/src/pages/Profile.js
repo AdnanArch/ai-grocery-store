@@ -6,26 +6,24 @@ import {
   Card,
   Form,
   Button,
-  Alert,
   Spinner,
+  Nav,
+  Tab,
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
+  faLock,
   faEnvelope,
   faPhone,
   faMapMarkerAlt,
-  faCity,
-  faGlobe,
-  faLock,
+  faEdit,
   faSave,
-  faKey,
-  faCalendarAlt,
-  faCheck,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../utils/axios";
 
 const Profile = () => {
   const { user, updateUserProfile } = useContext(AuthContext);
@@ -84,11 +82,7 @@ const Profile = () => {
     setSuccess(null);
 
     try {
-      const response = await axios.put("/api/users/profile", formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await api.put("/api/users/profile", formData);
 
       // Update the user context with new information
       updateUserProfile(response.data);
@@ -126,18 +120,10 @@ const Profile = () => {
     setPasswordSuccess(null);
 
     try {
-      await axios.put(
-        "/api/users/password",
-        {
-          currentPassword,
-          newPassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      await api.put("/api/users/password", {
+        currentPassword,
+        newPassword,
+      });
 
       setPasswordSuccess("Password updated successfully!");
       toast.success("Password updated successfully!");
@@ -171,9 +157,6 @@ const Profile = () => {
                     Please log in to view your profile.
                   </p>
                 </div>
-                <Alert variant="warning" className="mb-4">
-                  You need to be logged in to access your profile.
-                </Alert>
               </Card.Body>
             </Card>
           </Col>
@@ -215,17 +198,6 @@ const Profile = () => {
                     Update your personal details and contact information
                   </p>
                 </div>
-
-                {error && (
-                  <Alert variant="danger" className="mb-4">
-                    {error}
-                  </Alert>
-                )}
-                {success && (
-                  <Alert variant="success" className="mb-4">
-                    {success}
-                  </Alert>
-                )}
 
                 <Form onSubmit={handleProfileUpdate}>
                   <Row>
@@ -363,7 +335,7 @@ const Profile = () => {
                         </Form.Label>
                         <div className="input-group-custom">
                           <FontAwesomeIcon
-                            icon={faCity}
+                            icon={faMapMarkerAlt}
                             className="input-icon"
                           />
                           <Form.Control
@@ -438,7 +410,7 @@ const Profile = () => {
                         </Form.Label>
                         <div className="input-group-custom">
                           <FontAwesomeIcon
-                            icon={faGlobe}
+                            icon={faMapMarkerAlt}
                             className="input-icon"
                           />
                           <Form.Control
@@ -497,17 +469,6 @@ const Profile = () => {
                   </p>
                 </div>
 
-                {passwordError && (
-                  <Alert variant="danger" className="mb-4">
-                    {passwordError}
-                  </Alert>
-                )}
-                {passwordSuccess && (
-                  <Alert variant="success" className="mb-4">
-                    {passwordSuccess}
-                  </Alert>
-                )}
-
                 <Form onSubmit={handlePasswordChange}>
                   <Form.Group className="mb-4">
                     <Form.Label
@@ -537,7 +498,7 @@ const Profile = () => {
                       New Password
                     </Form.Label>
                     <div className="input-group-custom">
-                      <FontAwesomeIcon icon={faKey} className="input-icon" />
+                      <FontAwesomeIcon icon={faLock} className="input-icon" />
                       <Form.Control
                         type="password"
                         value={newPassword}
@@ -558,7 +519,7 @@ const Profile = () => {
                       Confirm New Password
                     </Form.Label>
                     <div className="input-group-custom">
-                      <FontAwesomeIcon icon={faKey} className="input-icon" />
+                      <FontAwesomeIcon icon={faLock} className="input-icon" />
                       <Form.Control
                         type="password"
                         value={confirmPassword}
@@ -594,7 +555,7 @@ const Profile = () => {
                         </>
                       ) : (
                         <>
-                          <FontAwesomeIcon icon={faCheck} className="me-2" />
+                          <FontAwesomeIcon icon={faSave} className="me-2" />
                           Change Password
                         </>
                       )}
@@ -641,7 +602,7 @@ const Profile = () => {
 
                   <div className="summary-item mb-3">
                     <div className="summary-icon">
-                      <FontAwesomeIcon icon={faCalendarAlt} />
+                      <FontAwesomeIcon icon={faMapMarkerAlt} />
                     </div>
                     <div className="summary-content">
                       <h6 className="summary-label">Member Since</h6>

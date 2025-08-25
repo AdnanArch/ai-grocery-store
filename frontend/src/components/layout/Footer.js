@@ -44,7 +44,7 @@ const Footer = () => {
               <div className="footer-brand mb-4">
                 <div className="brand-logo">
                   <FontAwesomeIcon icon={faLeaf} className="brand-icon" />
-                  <span className="brand-text">SmartShop</span>
+                  <span className="brand-text">FreshCart</span>
                 </div>
                 <p className="company-description">
                   Your AI-powered grocery shopping assistant. Discover fresh,
@@ -177,7 +177,7 @@ const Footer = () => {
           <Row className="align-items-center">
             <Col md={6} className="text-center text-md-start mb-3 mb-md-0">
               <p className="copyright">
-                &copy; {currentYear} SmartShop. All rights reserved.
+                &copy; {currentYear} FreshCart. All rights reserved.
               </p>
             </Col>
             <Col md={6} className="text-center text-md-end">

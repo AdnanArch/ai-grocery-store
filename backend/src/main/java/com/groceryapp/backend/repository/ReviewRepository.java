@@ -38,4 +38,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
            "CASE WHEN :sortBy = 'rating-high' THEN r.rating END DESC, " +
            "CASE WHEN :sortBy = 'rating-low' THEN r.rating END ASC")
     Page<Review> findByProductIdWithSorting(@Param("productId") Long productId, @Param("sortBy") String sortBy, Pageable pageable);
+    
+    void deleteByUserId(Long userId);
 }

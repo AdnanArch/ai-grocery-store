@@ -32,80 +32,124 @@ public class WishlistController {
     // Get user's wishlist
     @GetMapping
     public ResponseEntity<List<Wishlist>> getUserWishlist() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        List<Wishlist> wishlist = wishlistRepository.findByUserId(user.getId());
-        return ResponseEntity.ok(wishlist);
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            log.info("Fetching wishlist for user: {}", email);
+            
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            List<Wishlist> wishlist = wishlistRepository.findByUserId(user.getId());
+            log.info("Found {} wishlist items for user {}", wishlist.size(), user.getId());
+            
+            return ResponseEntity.ok(wishlist);
+        } catch (Exception e) {
+            log.error("Error fetching wishlist: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // Add product to wishlist
     @PostMapping("/add")
     public ResponseEntity<Wishlist> addToWishlist(@RequestBody Map<String, Object> request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        Long productId = Long.valueOf(request.get("productId").toString());
-        String wishlistName = (String) request.getOrDefault("wishlistName", "Default");
-        
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-        
-        // Check if already in wishlist
-        if (wishlistRepository.existsByUserIdAndProductId(user.getId(), productId)) {
-            return ResponseEntity.badRequest().build();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            log.info("Adding product to wishlist for user: {}", email);
+            
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            Long productId = Long.valueOf(request.get("productId").toString());
+            String wishlistName = (String) request.getOrDefault("wishlistName", "Default");
+            
+            log.info("Adding product {} to wishlist '{}' for user {}", productId, wishlistName, user.getId());
+            
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+            
+            // Check if already in wishlist
+            if (wishlistRepository.existsByUserIdAndProductId(user.getId(), productId)) {
+                log.info("Product {} already exists in wishlist for user {}", productId, user.getId());
+                return ResponseEntity.badRequest().build();
+            }
+            
+            Wishlist wishlistItem = Wishlist.builder()
+                    .user(user)
+                    .product(product)
+                    .wishlistName(wishlistName)
+                    .build();
+            
+            Wishlist saved = wishlistRepository.save(wishlistItem);
+            log.info("Successfully added product {} to wishlist for user {}", productId, user.getId());
+            
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            log.error("Error adding product to wishlist: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
-        
-        Wishlist wishlistItem = Wishlist.builder()
-                .user(user)
-                .product(product)
-                .wishlistName(wishlistName)
-                .build();
-        
-        Wishlist saved = wishlistRepository.save(wishlistItem);
-        return ResponseEntity.ok(saved);
     }
 
     // Remove product from wishlist
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> removeFromWishlist(@PathVariable Long productId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        wishlistRepository.deleteByUserIdAndProductId(user.getId(), productId);
-        return ResponseEntity.ok().build();
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            log.info("Attempting to remove product {} from wishlist for user {}", productId, email);
+            
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            log.info("Found user with ID: {}", user.getId());
+            
+            // Check if the wishlist item exists before deleting
+            boolean exists = wishlistRepository.existsByUserIdAndProductId(user.getId(), productId);
+            log.info("Wishlist item exists: {}", exists);
+            
+            if (!exists) {
+                log.warn("Wishlist item not found for user {} and product {}", user.getId(), productId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            wishlistRepository.deleteByUserIdAndProductId(user.getId(), productId);
+            log.info("Successfully removed product {} from wishlist for user {}", productId, user.getId());
+            
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error removing product {} from wishlist: {}", productId, e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // Create new wishlist
     @PostMapping("/create")
     public ResponseEntity<Map<String, String>> createWishlist(@RequestBody Map<String, String> request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        String wishlistName = request.get("name");
-        
-        // Create a placeholder wishlist item to establish the wishlist
-        Wishlist wishlistItem = Wishlist.builder()
-                .user(user)
-                .product(null) // This will be updated when products are added
-                .wishlistName(wishlistName)
-                .build();
-        
-        wishlistRepository.save(wishlistItem);
-        
-        return ResponseEntity.ok(Map.of("message", "Wishlist created successfully"));
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+            
+            log.info("Creating new wishlist for user: {}", email);
+            
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            String wishlistName = request.get("name");
+            
+            // Note: We don't create empty wishlist items since product_id is required
+            // Wishlists are created when products are added to them
+            
+            log.info("Wishlist '{}' created successfully for user {}", wishlistName, user.getId());
+            
+            return ResponseEntity.ok(Map.of("message", "Wishlist created successfully"));
+        } catch (Exception e) {
+            log.error("Error creating wishlist: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to create wishlist"));
+        }
     }
 
     // Get wishlist names for user

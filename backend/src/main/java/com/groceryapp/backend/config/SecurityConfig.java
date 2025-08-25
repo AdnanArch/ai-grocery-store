@@ -24,6 +24,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
 
 @Configuration
@@ -60,7 +61,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // API endpoints
-                        .requestMatchers("/api/auth/**", "/api/products/**", "/api/categories/**", "/api/recommendations/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/products/**", "/api/categories/**", "/api/recommendations/**", "/api/images/**").permitAll()
                         // Static resources for React app
                         .requestMatchers(
                                 "/",

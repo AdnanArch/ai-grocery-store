@@ -6,7 +6,6 @@ import {
   Card,
   Button,
   Form,
-  Alert,
   Spinner,
   Badge,
   Modal,
@@ -139,9 +138,7 @@ const ProductReviews = () => {
 
   if (!product) {
     return (
-      <Container className="d-flex justify-content-center align-items-center min-vh-100">
-        <Alert variant="danger">Product not found</Alert>
-      </Container>
+      <Container className="d-flex justify-content-center align-items-center min-vh-100"></Container>
     );
   }
 

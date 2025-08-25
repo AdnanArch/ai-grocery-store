@@ -40,6 +40,12 @@ public class EmailService {
             log.warn("JavaMailSender is not configured. Email functionality will be disabled.");
         } else {
             log.info("EmailService initialized successfully");
+            log.info("Email will be sent from: {}", fromEmail);
+            
+            // Check if email credentials are properly set
+            if (fromEmail == null || fromEmail.trim().isEmpty()) {
+                log.warn("Email username/password not configured. OTP codes will be logged instead of sent via email.");
+            }
         }
     }
 
@@ -109,7 +115,7 @@ public class EmailService {
 
             helper.setFrom(fromEmail);
             helper.setTo(user.getEmail());
-            helper.setSubject("Welcome to AI Grocery Store!");
+            helper.setSubject("Welcome to FreshCart!");
 
             // Prepare template context
             Context context = new Context();
@@ -240,6 +246,40 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendPaymentConfirmationEmail(Order order, User user, String transactionId, String paymentMethod) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(user.getEmail());
+            helper.setSubject("Payment Confirmation - Order #" + order.getId());
+
+            // Prepare template context
+            Context context = new Context();
+            context.setVariable("order", order);
+            context.setVariable("user", user);
+            context.setVariable("orderItems", order.getItems());
+            context.setVariable("totalAmount", order.getTotalAmount());
+            context.setVariable("orderDate", order.getCreatedAt().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
+            context.setVariable("orderNumber", order.getId());
+            context.setVariable("transactionId", transactionId);
+            context.setVariable("paymentMethod", paymentMethod);
+            context.setVariable("trackingUrl", frontendUrl + "/orders");
+            context.setVariable("currency", "PKR");
+
+            String htmlContent = templateEngine.process("payment-confirmation", context);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Payment confirmation email sent to {} for order #{}", user.getEmail(), order.getId());
+
+        } catch (MessagingException e) {
+            log.error("Failed to send payment confirmation email to {} for order #{}", user.getEmail(), order.getId(), e);
+        }
+    }
+
     // Simple text email for testing
     public void sendSimpleEmail(String to, String subject, String text) {
         try {
@@ -262,19 +302,26 @@ public class EmailService {
     @Async
     public void sendOTPEmail(String email, String otp, String userName) {
         try {
+            // Check if email is properly configured
+            if (mailSender == null || fromEmail == null || fromEmail.trim().isEmpty()) {
+                log.warn("Email service not properly configured. OTP will be logged instead of sent.");
+                log.info("OTP for {}: {}", email, otp);
+                return;
+            }
+
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail);
             helper.setTo(email);
-            helper.setSubject("Your Verification Code - AI Grocery Store");
+            helper.setSubject("Your Verification Code - FreshCart");
 
             // Prepare template context
             Context context = new Context();
             context.setVariable("otp", otp);
             context.setVariable("userName", userName);
             context.setVariable("expiryMinutes", 5);
-            context.setVariable("appName", "AI Grocery Store");
+            context.setVariable("appName", "FreshCart");
 
             String htmlContent = templateEngine.process("otp-verification", context);
             helper.setText(htmlContent, true);
@@ -284,20 +331,24 @@ public class EmailService {
 
         } catch (MessagingException e) {
             log.error("Failed to send OTP email to {}", email, e);
-            // Fallback to simple text email
-            sendSimpleOTPEmail(email, otp);
+            // Log the OTP instead of failing
+            log.info("OTP for {}: {}", email, otp);
+        } catch (Exception e) {
+            log.error("Unexpected error sending OTP email to {}", email, e);
+            // Log the OTP instead of failing
+            log.info("OTP for {}: {}", email, otp);
         }
     }
 
     // Fallback method for OTP email (simple text)
     private void sendSimpleOTPEmail(String email, String otp) {
         try {
-            String subject = "Your Verification Code - AI Grocery Store";
+            String subject = "Your Verification Code - FreshCart";
             String text = String.format(
                 "Your verification code is: %s\n\n" +
                 "This code will expire in 5 minutes.\n\n" +
                 "If you didn't request this code, please ignore this email.\n\n" +
-                "Best regards,\nAI Grocery Store Team",
+                "Best regards,\nFreshCart Team",
                 otp
             );
 

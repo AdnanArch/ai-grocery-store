@@ -6,7 +6,6 @@ import {
   Card,
   Form,
   Button,
-  Alert,
   Spinner,
 } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,6 +17,8 @@ import {
   faLock,
   faPhone,
   faIdCard,
+  faEye,
+  faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
@@ -46,6 +47,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [passwordMatch, setPasswordMatch] = useState(true);
   const [localError, setLocalError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -153,11 +156,7 @@ const Register = () => {
               >
                 Create an Account
               </h2>
-              {(error || localError) && (
-                <Alert variant="danger" className="mb-4">
-                  {error || localError}
-                </Alert>
-              )}
+
               <Form
                 noValidate
                 validated={validated}
@@ -234,20 +233,32 @@ const Register = () => {
                   <Col md={6} className="mb-3">
                     <Form.Group controlId="password">
                       <Form.Label>Password</Form.Label>
-                      <Form.Control
-                        type="password"
-                        name="password"
-                        placeholder="Create a password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        required
-                        minLength="6"
-                        className="login-input"
-                        isInvalid={
-                          validated &&
-                          (!formData.password || formData.password.length < 6)
-                        }
-                      />
+                      <div className="input-group-password">
+                        <Form.Control
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          placeholder="Create a password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          required
+                          minLength="6"
+                          className="login-input"
+                          isInvalid={
+                            validated &&
+                            (!formData.password || formData.password.length < 6)
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          <FontAwesomeIcon
+                            icon={showPassword ? faEyeSlash : faEye}
+                            style={{ fontSize: "1rem" }}
+                          />
+                        </button>
+                      </div>
                       <Form.Control.Feedback type="invalid">
                         Password must be at least 6 characters.
                       </Form.Control.Feedback>
@@ -256,16 +267,30 @@ const Register = () => {
                   <Col md={6} className="mb-3">
                     <Form.Group controlId="confirmPassword">
                       <Form.Label>Confirm Password</Form.Label>
-                      <Form.Control
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Confirm your password"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        required
-                        className="login-input"
-                        isInvalid={!passwordMatch}
-                      />
+                      <div className="input-group-password">
+                        <Form.Control
+                          type={showConfirmPassword ? "text" : "password"}
+                          name="confirmPassword"
+                          placeholder="Confirm your password"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          required
+                          className="login-input"
+                          isInvalid={!passwordMatch}
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                        >
+                          <FontAwesomeIcon
+                            icon={showConfirmPassword ? faEyeSlash : faEye}
+                            style={{ fontSize: "1rem" }}
+                          />
+                        </button>
+                      </div>
                       <Form.Control.Feedback type="invalid">
                         Passwords do not match.
                       </Form.Control.Feedback>

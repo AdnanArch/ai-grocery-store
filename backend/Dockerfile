@@ -11,6 +11,7 @@ COPY pom.xml .
 
 # Make mvnw executable and download dependencies
 RUN chmod +x mvnw && \
+    ./mvnw dependency:resolve -B && \
     ./mvnw dependency:go-offline -B
 
 # Copy source code
@@ -19,8 +20,9 @@ COPY src src
 # Build the application
 RUN ./mvnw clean package -DskipTests
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser && \
+# Create uploads directory and non-root user
+RUN mkdir -p /app/uploads/products && \
+    groupadd -r appuser && useradd -r -g appuser appuser && \
     chown -R appuser:appuser /app
 
 # Switch to non-root user

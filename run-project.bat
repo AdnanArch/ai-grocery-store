@@ -38,12 +38,6 @@ if %errorlevel% equ 0 (
     taskkill /f /im java.exe >nul 2>&1
 )
 
-netstat -an | findstr ":5000" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [WARNING] Port 5000 is already in use. Stopping conflicting services...
-    taskkill /f /im python.exe >nul 2>&1
-)
-
 :: Check if containers exist and ask user about cleanup
 echo [INFO] Checking for existing containers...
 docker-compose ps --quiet >nul 2>&1
@@ -97,7 +91,6 @@ echo   Service URLs
 echo ========================================
 echo Frontend:     http://localhost:3000
 echo Backend API:  http://localhost:8080/api
-echo AI Service:   http://localhost:5000
 echo phpMyAdmin:   http://localhost:8081
 echo.
 echo ========================================

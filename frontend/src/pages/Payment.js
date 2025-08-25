@@ -6,7 +6,6 @@ import {
   Card,
   Button,
   Form,
-  Alert,
   Spinner,
   Badge,
   Modal,
@@ -51,7 +50,7 @@ const PaymentForm = ({ order, onSuccess, onError }) => {
         data: { clientSecret },
       } = await api.post("/api/payments/create-payment-intent", {
         amount: order.totalAmount,
-        currency: "usd",
+        currency: "pkr",
         orderId: order.id,
         customerEmail: order.user?.email,
       });
@@ -114,12 +113,6 @@ const PaymentForm = ({ order, onSuccess, onError }) => {
         <CardElement options={cardElementOptions} />
       </Form.Group>
 
-      {error && (
-        <Alert variant="danger" className="mb-4">
-          {error}
-        </Alert>
-      )}
-
       <Button
         type="submit"
         variant="primary"
@@ -133,7 +126,7 @@ const PaymentForm = ({ order, onSuccess, onError }) => {
             Processing Payment...
           </>
         ) : (
-          `Pay $${order.totalAmount}`
+          `Pay ₨${order.totalAmount}`
         )}
       </Button>
     </Form>
@@ -193,11 +186,7 @@ const Payment = () => {
 
   if (!order) {
     return (
-      <Container className="d-flex justify-content-center align-items-center min-vh-100">
-        <Alert variant="danger">
-          No order found. Please complete checkout first.
-        </Alert>
-      </Container>
+      <Container className="d-flex justify-content-center align-items-center min-vh-100"></Container>
     );
   }
 
@@ -287,7 +276,7 @@ const Payment = () => {
                             {item.product?.name} x {item.quantity}
                           </span>
                           <span className="small">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ₨{(item.price * item.quantity).toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -297,20 +286,19 @@ const Payment = () => {
 
                     <div className="d-flex justify-content-between mb-2">
                       <span>Subtotal:</span>
-                      <span>${order.totalAmount}</span>
+                      <span>₨{order.totalAmount}</span>
                     </div>
                     <div className="d-flex justify-content-between mb-2">
                       <span>Shipping:</span>
                       <span>Free</span>
                     </div>
                     <div className="d-flex justify-content-between mb-2">
-                      <span>Tax:</span>
-                      <span>$0.00</span>
+                      <span>₨0.00</span>
                     </div>
                     <hr />
                     <div className="d-flex justify-content-between fw-bold">
                       <span>Total:</span>
-                      <span className="text-primary">${order.totalAmount}</span>
+                      <span className="text-primary">₨{order.totalAmount}</span>
                     </div>
                   </Card.Body>
                 </Card>

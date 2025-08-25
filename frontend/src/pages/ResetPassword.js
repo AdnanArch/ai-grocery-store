@@ -6,12 +6,16 @@ import {
   Card,
   Form,
   Button,
-  Alert,
   Spinner,
 } from "react-bootstrap";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLock, faCheck } from "@fortawesome/free-solid-svg-icons";
+import {
+  faLock,
+  faCheck,
+  faEye,
+  faEyeSlash,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -34,6 +38,8 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false);
   const [passwordMatch, setPasswordMatch] = useState(true);
   const [tokenValid, setTokenValid] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Validate token on component mount
   useEffect(() => {
@@ -73,9 +79,7 @@ const ResetPassword = () => {
       const password = name === "password" ? value : formData.password;
       const confirmPassword =
         name === "confirmPassword" ? value : formData.confirmPassword;
-      setPasswordMatch(
-        confirmPassword === "" || password === confirmPassword
-      );
+      setPasswordMatch(confirmPassword === "" || password === confirmPassword);
     }
 
     setError(null);
@@ -151,10 +155,6 @@ const ResetPassword = () => {
                   <h2 className="login-title mb-2">Reset Password</h2>
                 </div>
 
-                <Alert variant="danger" className="mb-4">
-                  {error}
-                </Alert>
-
                 <div className="text-center mt-4">
                   <Link to="/forgot-password" className="homepage-btn-main">
                     Request New Reset Link
@@ -181,19 +181,13 @@ const ResetPassword = () => {
                 </p>
               </div>
 
-              {error && (
-                <Alert variant="danger" className="mb-4">
-                  {error}
-                </Alert>
-              )}
-
               {success ? (
-                <Alert variant="success" className="mb-4">
+                <div className="text-center mb-4">
                   <p className="mb-0">
                     Your password has been reset successfully!
                   </p>
                   <p className="mb-0">Redirecting you to the login page...</p>
-                </Alert>
+                </div>
               ) : (
                 <Form noValidate validated={validated} onSubmit={handleSubmit}>
                   <Form.Group className="mb-4" controlId="password">
@@ -204,12 +198,8 @@ const ResetPassword = () => {
                       New Password
                     </Form.Label>
                     <div className="input-group-custom">
-                      <FontAwesomeIcon
-                        icon={faLock}
-                        className="input-icon"
-                      />
                       <Form.Control
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         name="password"
                         placeholder="Enter your new password"
                         value={formData.password}
@@ -222,6 +212,17 @@ const ResetPassword = () => {
                           (!formData.password || formData.password.length < 6)
                         }
                       />
+                      <FontAwesomeIcon icon={faLock} className="input-icon" />
+                      <button
+                        type="button"
+                        className="password-toggle-btn"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <FontAwesomeIcon
+                          icon={showPassword ? faEyeSlash : faEye}
+                          style={{ fontSize: "1rem" }}
+                        />
+                      </button>
                       <Form.Control.Feedback type="invalid">
                         Password must be at least 6 characters.
                       </Form.Control.Feedback>
@@ -236,12 +237,8 @@ const ResetPassword = () => {
                       Confirm New Password
                     </Form.Label>
                     <div className="input-group-custom">
-                      <FontAwesomeIcon
-                        icon={faLock}
-                        className="input-icon"
-                      />
                       <Form.Control
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         name="confirmPassword"
                         placeholder="Confirm your new password"
                         value={formData.confirmPassword}
@@ -250,6 +247,19 @@ const ResetPassword = () => {
                         className="login-input"
                         isInvalid={!passwordMatch}
                       />
+                      <FontAwesomeIcon icon={faLock} className="input-icon" />
+                      <button
+                        type="button"
+                        className="password-toggle-btn"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        <FontAwesomeIcon
+                          icon={showConfirmPassword ? faEyeSlash : faEye}
+                          style={{ fontSize: "1rem" }}
+                        />
+                      </button>
                       <Form.Control.Feedback type="invalid">
                         Passwords do not match.
                       </Form.Control.Feedback>
@@ -291,8 +301,8 @@ const ResetPassword = () => {
               <div className="text-center mt-4">
                 <p className="mb-0">
                   Remember your password?{" "}
-                  <Link 
-                    to="/login" 
+                  <Link
+                    to="/login"
                     className="text-decoration-none"
                     style={{ color: "#38e07b" }}
                   >

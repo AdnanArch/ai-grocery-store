@@ -6,7 +6,6 @@ import {
   Card,
   Form,
   Button,
-  Alert,
   Spinner,
 } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -183,12 +182,6 @@ const OTPVerification = () => {
                     {userData.email}
                   </p>
                 </div>
-
-                {error && (
-                  <Alert variant="danger" className="mb-4">
-                    {error}
-                  </Alert>
-                )}
 
                 <Form onSubmit={handleVerifyOTP}>
                   <div className="mb-4">

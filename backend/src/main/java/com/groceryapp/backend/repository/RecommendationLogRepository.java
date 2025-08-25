@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface RecommendationLogRepository extends JpaRepository<RecommendationLog, Long> {
     List<RecommendationLog> findByUserIdOrderByTimestampDesc(Long userId);
+    void deleteByUserId(Long userId);
 }
